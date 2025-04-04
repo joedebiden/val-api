@@ -1,0 +1,643 @@
+openapi: 3.0.0
+info:
+  title: Valenstagram API
+  description: API pour une plateforme de médias sociaux similaire à Instagram
+  version: 1.0.0
+  contact:
+    name: Evan H
+servers:
+  - url: http://localhost:5000
+    description: Serveur de développement
+  - url: https://api.evanh.site
+    description: Serveur de production
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        username:
+          type: string
+          maxLength: 20
+        email:
+          type: string
+          format: email
+          maxLength: 60
+        bio:
+          type: string
+          nullable: true
+        website:
+          type: string
+          nullable: true
+          maxLength: 32
+        gender:
+          type: string
+          nullable: true
+          maxLength: 32
+        profile_picture:
+          type: string
+          maxLength: 255
+          default: default.jpg
+        created_at:
+          type: string
+          format: date-time
+    
+    Post:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        image_url:
+          type: string
+          maxLength: 255
+        caption:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        hidden_tag:
+          type: boolean
+          default: false
+        user_id:
+          type: string
+          format: uuid
+    
+    Comment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        content:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        user_id:
+          type: string
+          format: uuid
+        post_id:
+          type: string
+          format: uuid
+    
+    Like:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        post_id:
+          type: string
+          format: uuid
+        created_at:
+          type: string
+          format: date-time
+    
+    Notification:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        sender_id:
+          type: string
+          format: uuid
+        post_id:
+          type: string
+          format: uuid
+          nullable: true
+        type:
+          type: string
+          enum: [like, comment, follow]
+        created_at:
+          type: string
+          format: date-time
+    
+    Message:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        conversation_id:
+          type: string
+          format: uuid
+        sender_id:
+          type: string
+          format: uuid
+        content:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        is_read:
+          type: boolean
+          default: false
+
+paths:
+  /api/auth/register:
+    post:
+      summary: Créer un nouveau compte utilisateur
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+                - email
+                - password
+              properties:
+                username:
+                  type: string
+                  minLength: 3
+                  maxLength: 20
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  minLength: 8
+      responses:
+        '201':
+          description: Compte créé avec succès
+        '400':
+          description: Données invalides ou nom d'utilisateur/email déjà pris
+  
+  /api/auth/login:
+    post:
+      summary: Connecter un utilisateur
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+                - password
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Connexion réussie
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                  user:
+                    $ref: '#/components/schemas/User'
+        '401':
+          description: Identifiants invalides
+
+  /api/user/profile:
+    get:
+      summary: Obtenir le profil de l'utilisateur connecté
+      tags:
+        - User
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Profil récupéré avec succès
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          description: Non autorisé
+    
+    put:
+      summary: Mettre à jour le profil de l'utilisateur
+      tags:
+        - User
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                bio:
+                  type: string
+                website:
+                  type: string
+                gender:
+                  type: string
+      responses:
+        '200':
+          description: Profil mis à jour avec succès
+        '401':
+          description: Non autorisé
+
+  /api/user/{username}:
+    get:
+      summary: Obtenir le profil d'un utilisateur par son nom d'utilisateur
+      tags:
+        - User
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Profil récupéré avec succès
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '404':
+          description: Utilisateur non trouvé
+
+  /api/posts:
+    post:
+      summary: Créer un nouveau post
+      tags:
+        - Posts
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - image
+              properties:
+                image:
+                  type: string
+                  format: binary
+                caption:
+                  type: string
+      responses:
+        '201':
+          description: Post créé avec succès
+        '401':
+          description: Non autorisé
+    
+    get:
+      summary: Obtenir les posts du fil d'actualité
+      tags:
+        - Posts
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: Posts récupérés avec succès
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  posts:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Post'
+                  total:
+                    type: integer
+                  pages:
+                    type: integer
+        '401':
+          description: Non autorisé
+
+  /api/posts/{post_id}:
+    get:
+      summary: Obtenir un post spécifique
+      tags:
+        - Posts
+      parameters:
+        - name: post_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Post récupéré avec succès
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+        '404':
+          description: Post non trouvé
+    
+    delete:
+      summary: Supprimer un post
+      tags:
+        - Posts
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: post_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Post supprimé avec succès
+        '403':
+          description: Non autorisé à supprimer ce post
+        '404':
+          description: Post non trouvé
+
+  /api/posts/{post_id}/like:
+    post:
+      summary: Aimer un post
+      tags:
+        - Posts
+        - Likes
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: post_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Post aimé avec succès
+        '401':
+          description: Non autorisé
+        '404':
+          description: Post non trouvé
+    
+    delete:
+      summary: Retirer un j'aime d'un post
+      tags:
+        - Posts
+        - Likes
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: post_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: J'aime retiré avec succès
+        '401':
+          description: Non autorisé
+        '404':
+          description: Post non trouvé ou j'aime inexistant
+
+  /api/posts/{post_id}/comments:
+    post:
+      summary: Ajouter un commentaire à un post
+      tags:
+        - Posts
+        - Comments
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: post_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - content
+              properties:
+                content:
+                  type: string
+      responses:
+        '201':
+          description: Commentaire ajouté avec succès
+        '401':
+          description: Non autorisé
+        '404':
+          description: Post non trouvé
+    
+    get:
+      summary: Obtenir les commentaires d'un post
+      tags:
+        - Posts
+        - Comments
+      parameters:
+        - name: post_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Commentaires récupérés avec succès
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Comment'
+        '404':
+          description: Post non trouvé
+
+  /api/user/follow/{user_id}:
+    post:
+      summary: Suivre un utilisateur
+      tags:
+        - User
+        - Follow
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Utilisateur suivi avec succès
+        '401':
+          description: Non autorisé
+        '404':
+          description: Utilisateur non trouvé
+    
+    delete:
+      summary: Ne plus suivre un utilisateur
+      tags:
+        - User
+        - Follow
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Utilisateur non suivi avec succès
+        '401':
+          description: Non autorisé
+        '404':
+          description: Utilisateur non trouvé ou relation inexistante
+
+  /api/notifications:
+    get:
+      summary: Obtenir les notifications de l'utilisateur
+      tags:
+        - Notifications
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Notifications récupérées avec succès
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Notification'
+        '401':
+          description: Non autorisé
+
+  /api/conversations:
+    get:
+      summary: Obtenir toutes les conversations de l'utilisateur
+      tags:
+        - Messages
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Conversations récupérées avec succès
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      format: uuid
+                    other_user:
+                      $ref: '#/components/schemas/User'
+                    last_message:
+                      $ref: '#/components/schemas/Message'
+                    unread_count:
+                      type: integer
+        '401':
+          description: Non autorisé
+
+  /api/conversations/{user_id}:
+    post:
+      summary: Créer une nouvelle conversation ou envoyer un message
+      tags:
+        - Messages
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - content
+              properties:
+                content:
+                  type: string
+      responses:
+        '201':
+          description: Message envoyé avec succès
+        '401':
+          description: Non autorisé
+        '404':
+          description: Utilisateur non trouvé
+    
+    get:
+      summary: Obtenir les messages d'une conversation
+      tags:
+        - Messages
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Messages récupérés avec succès
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Message'
+        '401':
+          description: Non autorisé
+        '404':
+          description: Conversation non trouvée

@@ -1,0 +1,26 @@
+name: val-prod
+
+services:
+  db:
+    container_name: db
+    image: postgres:16.8-alpine
+    volumes:
+      - ./.docker/postgres/data:/var/lib/postgresql/data
+      - ./docker/postgres/install-extensions.sql:/docker-entrypoint-initdb.d/install-extensions.sql
+    environment:
+      - POSTGRES_DB=val
+      - POSTGRES_USER=val
+      - POSTGRES_PASSWORD=PL4ES3CH4NG3M3
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "80:5000"
+    environment:
+      - FLASK_DEBUG=False
+      - DB_URI=postgresql://val:PL4ES3CH4NG3M3@db:5432/val
+      - SECRET_KEY_APP=PL4ES3CH4NG3M3
+      - SECRET_KEY_JWT=PL4ES3CH4NG3M3
+    restart: always

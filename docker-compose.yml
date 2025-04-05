@@ -1,20 +1,16 @@
+name: val-dev
+
 services:
-  api:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    ports:
-      - "5000:5000"
+  db:
+    container_name: db
+    image: postgres:16.8-alpine
     volumes:
-      - ./instance:/api/instance
-    networks:
-      - valenstagram-network
-    restart:
-      unless-stopped
-
-networks:
-  valenstagram-network:
-    driver: bridge
-
-volumes:
-  instance:
+      - ./.docker/postgres/data:/var/lib/postgresql/data
+      - ./docker/postgres/install-extensions.sql:/docker-entrypoint-initdb.d/install-extensions.sql
+    ports:
+      - '5432:5432'
+    environment:
+      - POSTGRES_DB=val
+      - POSTGRES_USER=val
+      - POSTGRES_SCHEMA=val
+      - POSTGRES_PASSWORD=val

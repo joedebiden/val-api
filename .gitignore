@@ -88,6 +88,8 @@ eggs/
 sdist/
 wheels/
 *.egg-info/
+.docker/
+docker/
 
 # public photos
 public/uploads/

@@ -9,7 +9,6 @@ RUN pip install --no-cache-dir --upgrade pip && \
 COPY migrations migrations/
 COPY models.py extensions.py app.py wsgi.py ./
 COPY routes routes/
-COPY static static/
 COPY templates templates/
 COPY openapi.yml ./
 

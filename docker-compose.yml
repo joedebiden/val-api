@@ -1,0 +1,18 @@
+services:
+  api:
+    image: dockerfile_name
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./instance:/api/instance
+    networks:
+      - valenstagram-network
+    restart:
+      unless-stopped
+
+networks:
+  valenstagram-network:
+    driver: bridge
+
+volumes:
+  instance:

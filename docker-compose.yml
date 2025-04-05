@@ -1,6 +1,8 @@
 services:
   api:
-    image: dockerfile_name
+    build:
+      context: .
+      dockerfile: Dockerfile
     ports:
       - "5000:5000"
     volumes:

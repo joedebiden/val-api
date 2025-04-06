@@ -63,7 +63,7 @@ def login():
     if user and check_password_hash(user.password_hash, password):
         user_id = user.id
         token = jwt.encode({
-            'id': user_id,
+            'id': str(user_id),
             'exp': datetime.datetime.utcnow() + datetime.timedelta(days=1)
         }, secret_key, algorithm='HS256')
         return jsonify({"token": token}), 200
@@ -71,7 +71,9 @@ def login():
         return jsonify({"message": "Invalid credentials"}), 401
     
 
-"""Vérification du token JWT"""
+"""Vérification du token JWT
+return true or false for JWT in body 
+"""
 @auth_bp.route('/token', methods=['POST'])
 def token():
     data = request.get_json()

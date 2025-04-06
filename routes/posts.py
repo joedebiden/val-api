@@ -4,7 +4,7 @@ from models import User, Post, Follow
 from routes.auth import get_user_id_from_jwt
 from routes.user import allowed_file, UPLOAD_FOLDER
 from werkzeug.utils import secure_filename
-import os 
+import os
 
 post_bp = Blueprint('post_bp', __name__, url_prefix='/post')
 
@@ -24,7 +24,7 @@ def upload_post():
     user_id = get_user_id_from_jwt()
     if not user_id:
         return jsonify({'message' : 'Not authorized'}), 401
-    
+
     user = User.query.filter_by(id=user_id).first()
 
     if not user:
@@ -32,18 +32,18 @@ def upload_post():
 
     if 'file' not in request.files:
         return jsonify({'message': 'File not found' }), 404
-    
+
     file = request.files.get('file')
     if not file:
         return jsonify({'message': 'File not selected' }), 404
-    
+
     if file and allowed_file(file.filename):
         filename = secure_filename(file.filename)
         filepath = os.path.join(UPLOAD_FOLDER, filename)
 
         if not filepath.startswith(UPLOAD_FOLDER):  # ça permet d'éviter les attaques par Directory traversal attack
             return jsonify({'message': 'Invalid file path' }), 400
-        
+
 
         # une fois l'auth vérifiée on assigne la photo uploadée au post de l'utilisateur et ses données qui suivent
         file.save(filepath)
@@ -55,10 +55,10 @@ def upload_post():
             )
             db.session.add(new_post)
             db.session.commit()
-        except: 
+        except:
             db.session.rollback()
             return jsonify({'message': 'An error occurred while updating profile picture'}), 500
-        
+
         return jsonify({
             'message': 'Post uploaded successfully',
             'post_url': f'/post/{new_post.id}',
@@ -68,7 +68,10 @@ def upload_post():
                 'created_at': str(new_post.created_at),
             }
         }), 200
-        
+    return jsonify({
+        'message' 'Unsupported Media Type',
+    }), 415
+
 
 """
 route pour afficher les infos d'un post
@@ -78,7 +81,7 @@ route pour afficher les infos d'un post
 def show_post(id_post):
     if not id_post:
         jsonify({'message': 'Missing the post id'}), 400
-    
+
     post = Post.query.filter_by(id=id_post).first()
     if not post:
         return jsonify({'message': "The post was not found"}), 404
@@ -86,7 +89,7 @@ def show_post(id_post):
     return jsonify({
         'message': 'Post found',
         'post': {
-            'id': post.id,
+            'id': str(post.id),
             'image_url': post.image_url,
             'caption': post.caption,
             'user_id': post.user_id,
@@ -110,7 +113,7 @@ def feed_post():
     feed = get_feed(user_id) # array
     serialized_feed = [
         {
-            'id': post.id,
+            'id': str(post.id),
             'image_url': post.image_url,
             'caption': post.caption,
             'user_id': post.user_id,
@@ -121,7 +124,7 @@ def feed_post():
         for post in feed
     ]
     return jsonify({
-        'message': 'Feed successfully loaded', 
+        'message': 'Feed successfully loaded',
         'content': serialized_feed
     }), 200
 
@@ -143,23 +146,23 @@ def get_random_posts(user_id):
 """merging des fonctions followed_posts & random_post sous forme d'array"""
 def get_feed(user_id):
     posts = get_followed_posts(user_id)
-    random_post = get_random_posts(user_id) 
+    random_post = get_random_posts(user_id)
     if random_post:
-        posts.append(random_post) 
+        posts.append(random_post)
     return posts
-    
+
 
 
 @post_bp.route('/delete', methods=['POST'])
 def delete_post():
     return
 
-# Récupérer tous les posts (ex: page Explore). 
+# Récupérer tous les posts (ex: page Explore).
 @post_bp.route('/get-all', methods=['POST'])
 def get_all_post():
     return
 
-# Récupérer les posts d'un utilisateur spécifique (ex: profil utilisateur). 
+# Récupérer les posts d'un utilisateur spécifique (ex: profil utilisateur).
 @post_bp.route('/get-user/', methods=['POST'])
 def get_user_post():
     return

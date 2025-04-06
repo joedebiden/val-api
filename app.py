@@ -32,6 +32,7 @@ def create_app():
 
     from routes.auth import auth_bp
     from routes.user import user_bp
+    from routes.follow import follow_bp
     from routes.posts import post_bp
 
     # config of Swagger UI
@@ -50,6 +51,7 @@ def create_app():
     app.register_blueprint(swaggerui_blueprint, url_prefix=swagger_url)
     app.register_blueprint(auth_bp)
     app.register_blueprint(user_bp)
+    app.register_blueprint(follow_bp)
     app.register_blueprint(post_bp)
 
     @app.route('/')

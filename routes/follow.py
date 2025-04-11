@@ -3,7 +3,7 @@ from models import User, Follow
 from extensions import db
 from routes.auth import get_user_id_from_jwt
 
-follow_bp = Blueprint('follow', __name__, url_prefix='/follow')
+follow_bp = Blueprint('follows', __name__, url_prefix='/follow')
 
 """
 Abonnement d'un utilisateur

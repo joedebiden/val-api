@@ -42,7 +42,7 @@ def upload_post():
         filepath = os.path.join(UPLOAD_FOLDER, filename)
 
         if not filepath.startswith(UPLOAD_FOLDER):  # ça permet d'éviter les attaques par Directory traversal attack
-            return jsonify({'message': 'Invalid file path' }), 400
+            return jsonify({"message": "Don't try to hack me ;) "}), 406
 
 
         # une fois l'auth vérifiée on assigne la photo uploadée au post de l'utilisateur et ses données qui suivent
@@ -69,7 +69,7 @@ def upload_post():
             }
         }), 200
     return jsonify({
-        'message' 'Unsupported Media Type',
+        'message' : 'Unsupported Media Type',
     }), 415
 
 

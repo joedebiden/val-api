@@ -1,11 +1,14 @@
 from datetime import datetime
 import uuid
+
+from flask_login import UserMixin
+
 from extensions import db
 
 """ 
 Table User
 """
-class User(db.Model):
+class User(db.Model, UserMixin):
     id = db.Column(db.UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     username = db.Column(db.String(20), unique=True, nullable=False)
     email = db.Column(db.String(60), unique=True, nullable=False)
@@ -15,14 +18,13 @@ class User(db.Model):
     gender = db.Column(db.String(32), nullable=True)
     profile_picture = db.Column(db.String(255), nullable=True, default='default.jpg')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    is_admin = db.Column(db.Boolean, default=False)
 
     posts = db.relationship('Post', backref='author', lazy=True)
 
-
-
 """ 
 Table Post
-Publications
+Publications    
 """
 class Post(db.Model):
     id = db.Column(db.UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)

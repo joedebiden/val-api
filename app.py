@@ -1,16 +1,20 @@
 import os, dotenv, sys
-from flask import Flask, render_template
+from urllib import request
+
+from flask import Flask, render_template, request, redirect, flash, url_for
 from flask_swagger_ui import get_swaggerui_blueprint
+from flask_login import LoginManager, login_user
+from werkzeug.security import check_password_hash
 
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
-from extensions import db, mig, cors
+from extensions import db, mig, cors, login_manager
 
 dotenv.load_dotenv()
 
 # classes de configuration
 class Config:
-    SECRET_KEY_APP = os.environ.get('SECRET_KEY_APP')
+    SECRET_KEY = os.environ.get('SECRET_KEY_APP')
     basedir = os.path.abspath(os.path.dirname(__file__))
     SQLALCHEMY_DATABASE_URI = os.environ.get('DB_URI')
     DEBUG = os.environ.get('FLASK_DEBUG')
@@ -25,10 +29,20 @@ def create_app():
     # autorise toutes les origines
     cors.init_app(app, resources={r"/*": {"origins": "*"}})
     mig.init_app(app, db)
-    
+
+    login_manager = LoginManager()
+    login_manager.init_app(app)
+    login_manager.login_view = 'auth.login'
+
+    @login_manager.user_loader
+    def load_user(user_id):
+        from models import User
+        return User.query.get(user_id)
+
     with app.app_context():
         from models import User, Post, Like, Comment, Follow, Notification, Conversation, Message
         # Les modèles sont importés pour être détectés par Flask-Migrate
+
 
     from routes.auth import auth_bp
     from routes.user import user_bp
@@ -54,9 +68,26 @@ def create_app():
     app.register_blueprint(follow_bp)
     app.register_blueprint(post_bp)
 
+    from admin import init_admin
+    init_admin(app)
+
     @app.route('/')
     def index():
         return render_template("index.html")
+
+    @app.route('/admin/login', methods=['GET', 'POST'])
+    def admin_login_page():
+        if request.method == 'POST':
+            username = request.form.get('username')
+            password = request.form.get('password')
+            user = User.query.filter_by(username=username).first()
+
+            if user and user.is_admin and check_password_hash(user.password_hash, password):
+                login_user(user)
+                return redirect(url_for('admin.index'))
+            else:
+                flash('Login incorrect ^^')
+        return render_template("admin/login.html")
 
     @app.route('/static/openapi.json')
     def serve_swagger_spec():

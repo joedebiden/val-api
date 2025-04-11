@@ -550,7 +550,7 @@ paths:
                     items:
                       $ref: '#/components/schemas/FollowerInfo'
 
-  /post:
+  /post/upload:
     post:
       summary: Upload a post
       tags:

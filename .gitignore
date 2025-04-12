@@ -90,6 +90,7 @@ wheels/
 *.egg-info/
 .docker/
 docker/
+migrations/
 
 # public photos
 public/uploads/

@@ -14,7 +14,7 @@ de plus un utilisateur ne peut pas se suivre lui même
 """
 
 
-@follow_bp.route('/follow', methods=['GET', 'POST'])
+@follow_bp.route('/user', methods=['GET', 'POST'])
 def follow():
     data = request.get_json()
 
@@ -30,7 +30,7 @@ def follow():
     if not user_other:
         return jsonify({'message': 'User not found'}), 404
 
-    user_id_other = user_other.id
+    user_id_other = str(user_other.id)
 
     if user_id == user_id_other:
         return jsonify({'message': "You can't follow yourself"}), 400
@@ -77,7 +77,7 @@ def unfollow():
     if not user_other:
         return jsonify({'message': 'User not found'}), 404
 
-    user_id_other = user_other.id
+    user_id_other = str(user_other.id)
 
     follow_query = Follow.query.filter_by(follower_id=user_id, followed_id=user_id_other).first()
 
@@ -199,7 +199,7 @@ def remove_follower():
     if not user_other:
         return jsonify({'message': 'User not found'}), 404
 
-    user_id_other = user_other.id
+    user_id_other = str(user_other.id)
 
     follow_query = Follow.query.filter_by(follower_id=user_id_other, followed_id=user_id).first()
 

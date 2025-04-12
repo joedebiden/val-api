@@ -81,7 +81,7 @@ It returns code **200** :
 
 ```json
 {
-    "username" : "test2"
+    "username" : "test2",
     "bio" : "I am a developer"
 }
 ```
@@ -185,7 +185,7 @@ It returns code **200** :
 
 ### Follow a user
 
-`GET / POST :  http://127.0.0.1:5000/user/follow`
+`GET / POST :  http://127.0.0.1:5000/follow/user`
 
 In header, you need to add `Authorization` (OAuth 2.0) with the HS256 algo get from login.
 
@@ -211,7 +211,7 @@ It returns code **200** :
 
 ### Unfollow a user
 
-`GET / POST :  http://127.0.0.1:5000/user/unfollow`
+`GET / POST :  http://127.0.0.1:5000/follow/unfollow`
 
 In header, you need to add `Authorization` (OAuth 2.0) with the HS256 algo get from login.
 
@@ -235,7 +235,7 @@ It returns code **200** :
 
 ### Delete a follower
 
-`GET / POST : http://127.0.0.1:5000/user/remove-follower/`
+`GET / POST : http://127.0.0.1:5000/follow/remove-follower/`
 
 In header, you need to add `Authorization` (OAuth 2.0) with the HS256 algo get from login.
 
@@ -259,7 +259,7 @@ It returns code **200** :
 
 ### Get followers of an user
 
-`GET / POST : http://127.0.0.1:5000/user/get-follow/<username>`
+`GET / POST : http://127.0.0.1:5000/follow/get-follow/<username>`
 
 Switch `<username>` with the id of the user you want to get the followers.
 
@@ -281,7 +281,7 @@ It returns code **200** :
 
 ### Get followed of an user
 
-`GET / POST : http://127.0.0.1:5000/user/get-followed/<username>`
+`GET / POST : http://127.0.0.1:5000/follow/get-followed/<username>`
 
 Switch `<username>` with the id of the user you want to get the followers.
 

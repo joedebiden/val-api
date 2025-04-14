@@ -303,7 +303,7 @@ It returns code **200** :
 
 ### Upload a post
 
-`POST : http://`
+`POST : http://127.0.0.1:5000/post/upload
 
 In header, you need to add `Authorization` (OAuth 2.0) with the HS256 algo get from login. And `Content-Type` as `multipart/form-data`
 
@@ -391,5 +391,59 @@ It returns code **200** :
         }
     ],
     "message": "Feed successfully loaded"
+}
+```
+### Get all post from a user
+
+`POST : http://127.0.0.1:5000/post/get-user/<username>`
+
+In header you can put the Bearer token to proof yourself you are trying to see all your post (include the hidden one), but the token is not necessary for the request.
+
+Its return code **200** :
+
+Request with token in header (there is one post with the hidden tag - private visibility)
+
+```json
+{
+    "message": "Post(s) found",
+    "post": [
+        {
+            "caption": "orem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type an",
+            "created_at": "2025-04-13 20:52:21.537384",
+            "id": "383cf999-2d11-4549-8653-ee2bbbba8faf",
+            "image_url": "pic4.jpg",
+            "user_id": "0143e35c-3f81-4474-8f20-e92048539c42",
+            "user_profile": "pic3.png",
+            "username": "dev"
+        },
+        {
+            "caption": "orem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type an",
+            "created_at": "2025-04-13 20:52:15",
+            "id": "b558f226-77d4-4c96-abf3-81e5d337d717",
+            "image_url": "pic7.jpg",
+            "user_id": "0143e35c-3f81-4474-8f20-e92048539c42",
+            "user_profile": "pic3.png",
+            "username": "dev"
+        }
+    ]
+} 
+```
+
+Request without the token (public visibility)
+
+```json
+{
+    "message": "Post(s) found",
+    "post": [
+        {
+            "caption": "orem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type an",
+            "created_at": "2025-04-13 20:52:21.537384",
+            "id": "383cf999-2d11-4549-8653-ee2bbbba8faf",
+            "image_url": "pic4.jpg",
+            "user_id": "0143e35c-3f81-4474-8f20-e92048539c42",
+            "user_profile": "pic3.png",
+            "username": "dev"
+        }
+    ]
 }
 ```

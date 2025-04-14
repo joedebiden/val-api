@@ -163,9 +163,51 @@ def get_all_post():
     return
 
 # Récupérer les posts d'un utilisateur spécifique (ex: profil utilisateur).
-@post_bp.route('/get-user/', methods=['POST'])
-def get_user_post():
-    return
+# récupérer tous les posts meme ceux cachés si c'est l'utilisateur concerné (token jwt = user_id)
+# sinon simplement afficher les posts publics de la personne
+@post_bp.route('/get-user/<user>', methods=['POST'])
+def get_user_post(user):
+    if not user:
+        return jsonify({'message' : 'User not request'}), 401
+    target_user = User.query.filter_by(username=user).first().id
+    current_user = get_user_id_from_jwt()
+    if current_user == str(target_user):
+        # show all posts even hidden
+        posts = db.session.query(Post).filter(Post.user_id == target_user)
+        serialized_posts = [
+            {
+                'id': str(post.id),
+                'image_url': post.image_url,
+                'caption': post.caption,
+                'user_id': str(post.user_id),
+                'username': User.query.get(post.user_id).username,
+                'user_profile': User.query.get(post.user_id).profile_picture,
+                'created_at': str(post.created_at),
+            }
+            for post in posts
+        ]
+        return jsonify({
+            'message': 'Post(s) found',
+            'post': serialized_posts
+        })
+    # else show public post
+    posts = db.session.query(Post).filter(Post.user_id == target_user).filter(Post.hidden_tag == False)
+    serialized_posts = [
+        {
+            'id': str(post.id),
+            'image_url': post.image_url,
+            'caption': post.caption,
+            'user_id': str(post.user_id),
+            'username': User.query.get(post.user_id).username,
+            'user_profile': User.query.get(post.user_id).profile_picture,
+            'created_at': str(post.created_at),
+        }
+        for post in posts
+    ]
+    return jsonify({
+        'message': 'Post(s) found',
+        'post': serialized_posts
+    })
 
 # Récupérer les posts des personnes suivies (ex: feed principal).
 @post_bp.route('/get-followed', methods=['POST'])

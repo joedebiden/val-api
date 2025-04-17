@@ -340,11 +340,12 @@ It returns code **200** :
 {
     "message": "Post found",
     "post": {
-        "caption": "Look this cool picture !",
-        "created_at": "2025-03-17 15:15:51.394491",
-        "id": "c7013664-db3d-45c5-a3c5-2680448170c6",
-        "image_url": "colin-watts-F7Sg9CovAVA-unsplash.jpg",
-        "user_id": "28ff42af-b87c-4e4c-8051-3365547674d2"
+        "caption": "orem Ipsum is simply dummy text ",
+        "created_at": "2025-04-13 20:52:21.537384",
+        "id": "383cf999-2d11-4549-8653-ee2bbbba8faf",
+        "image_url": "pic4.jpg",
+        "user_profile_url": "pic3.png",
+        "username": "dev"
     }
 }
 ```

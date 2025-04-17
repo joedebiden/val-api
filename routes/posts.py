@@ -80,9 +80,12 @@ route pour afficher les infos d'un post
 @post_bp.route('/<id_post>', methods=['GET'])
 def show_post(id_post):
     if not id_post:
-        jsonify({'message': 'Missing the post id'}), 400
+        return jsonify({'message': 'Missing the post id'}), 400
 
-    post = Post.query.filter_by(id=id_post).first()
+    #post = Post.query.filter_by(id=id_post).first()
+    post = db.session.query(Post).filter_by(id=id_post).first()
+
+    user = User.query.get(post.user_id)
     if not post:
         return jsonify({'message': "The post was not found"}), 404
 
@@ -92,7 +95,8 @@ def show_post(id_post):
             'id': str(post.id),
             'image_url': post.image_url,
             'caption': post.caption,
-            'user_id': post.user_id,
+            'username': user.username,
+            'user_profile_url': user.profile_picture,
             'created_at': str(post.created_at),
         }
     }), 200
@@ -176,10 +180,9 @@ def get_user_post(user):
         posts = db.session.query(Post).filter(Post.user_id == target_user)
         serialized_posts = [
             {
-                'id': str(post.id),
+                'id': post.id,
                 'image_url': post.image_url,
                 'caption': post.caption,
-                'user_id': str(post.user_id),
                 'username': User.query.get(post.user_id).username,
                 'user_profile': User.query.get(post.user_id).profile_picture,
                 'created_at': str(post.created_at),
@@ -194,10 +197,9 @@ def get_user_post(user):
     posts = db.session.query(Post).filter(Post.user_id == target_user).filter(Post.hidden_tag == False)
     serialized_posts = [
         {
-            'id': str(post.id),
+            'id': post.id,
             'image_url': post.image_url,
             'caption': post.caption,
-            'user_id': str(post.user_id),
             'username': User.query.get(post.user_id).username,
             'user_profile': User.query.get(post.user_id).profile_picture,
             'created_at': str(post.created_at),

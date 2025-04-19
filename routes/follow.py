@@ -14,8 +14,15 @@ de plus un utilisateur ne peut pas se suivre lui même
 """
 
 
-@follow_bp.route('/user', methods=['GET', 'POST'])
+@follow_bp.route('/user', methods=['GET', 'POST', 'OPTIONS'])
 def follow():
+    if request.method == 'OPTIONS':
+        response = jsonify({})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        response.headers.add('Access-Control-Allow-Headers', '*')
+        response.headers.add('Access-Control-Allow-Methods', '*')
+        return response
+
     data = request.get_json()
 
     username_other = data.get('username_other')  # username de l'utilisateur à suivre
@@ -24,7 +31,7 @@ def follow():
 
     user_id = get_user_id_from_jwt()  # id de l'utilisateur connecté
     if not user_id:
-        return jsonify({'message': 'Unauthorized'}), 401
+        return jsonify({'message': 'Unauthorized, you are not connected or refresh your credentials'}), 401
 
     user_other = User.query.filter_by(username=username_other).first()
     if not user_other:

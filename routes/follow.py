@@ -24,14 +24,24 @@ def follow():
         return response
 
     data = request.get_json()
+    if not data:
+        return jsonify({'message': 'Missing data'}), 404
 
-    username_other = data.get('username_other')  # username de l'utilisateur à suivre
-    if not data or 'username_other' not in data:
+    username_other = data.get('username_other')
+    if not username_other:
         return jsonify({'message': 'Missing username_other field'}), 404
 
-    user_id = get_user_id_from_jwt()  # id de l'utilisateur connecté
+    # Vérifier si username_other est un dictionnaire et extraire le nom d'utilisateur
+    if isinstance(username_other, dict) and 'username' in username_other:
+        username_other = username_other['username']
+
+    user_id = get_user_id_from_jwt()
     if not user_id:
         return jsonify({'message': 'Unauthorized, you are not connected or refresh your credentials'}), 401
+
+    # probleme coté front revoir l'envoie des objets, soit j'envoie un objet soit j'envoie un string dans le back pour le nom des utilisateurs
+    # alors mettre un point commun
+    # stratégie à faire => un objet avec AlertProps(message: string & type: array) & FollowUser(username: string & profile: string) dans un objet unique FollowButtonProps(AlertProps & FollowUser)
 
     user_other = User.query.filter_by(username=username_other).first()
     if not user_other:
@@ -40,7 +50,7 @@ def follow():
     user_id_other = str(user_other.id)
 
     if user_id == user_id_other:
-        return jsonify({'message': "You can't follow yourself"}), 400
+        return jsonify({'message': "You can't follow yourself"}), 401
 
     if Follow.query.filter_by(follower_id=user_id, followed_id=user_id_other).first():
         return jsonify({'message': 'Already following'}), 400

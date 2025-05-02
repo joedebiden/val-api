@@ -62,11 +62,17 @@ def login():
     user = User.query.filter_by(username=username).first()
     if user and check_password_hash(user.password_hash, password):
         user_id = user.id
+        user_profile = user.profile_picture if user.profile_picture else None
         token = jwt.encode({
             'id': str(user_id),
             'exp': datetime.datetime.utcnow() + datetime.timedelta(days=1)
         }, secret_key, algorithm='HS256')
-        return jsonify({"token": token}), 200
+        return jsonify({
+            "token": token,
+            "user_id": user_id,
+            "username": username,
+            "profile_picture": user_profile,
+            }), 200
     else:
         return jsonify({"message": "Invalid credentials"}), 401
     

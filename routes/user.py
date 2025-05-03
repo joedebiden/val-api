@@ -1,5 +1,5 @@
 from flask import Blueprint, jsonify, request, send_from_directory
-from models import User, Follow
+from models import User
 from extensions import db
 from routes.auth import get_user_id_from_jwt
 from werkzeug.utils import secure_filename
@@ -7,21 +7,21 @@ import os
 
 user_bp = Blueprint('user_bp', __name__, url_prefix='/user')
 
+UPLOAD_FOLDER = "public/uploads/"
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-
-""" 
-Profil 
-L'utilisateur est connecté et clique sur 'Profil'.
-React envoie une requête POST /user/profile.
-Objectif est de récupérer le username, email, photo de profil, bio, date de création à partir du token JWT 
-"""
-@user_bp.route('/profile', methods=['POST'])
+@user_bp.route('/profile', methods=['GET'])
 def profile():
     user_id = get_user_id_from_jwt()
     user = User.query.filter_by(id=user_id).first()
     
     if not user_id:
-        return jsonify({"message": "Unauthorized"}), 401
+        return jsonify({"message": "Unauthorized, please log in."}), 401
     
     return jsonify({
         "username": user.username,
@@ -33,15 +33,11 @@ def profile():
         "created_at": user.created_at,  
     }), 200
 
-
-"""
-Modification du profil utilisateur
-"""
 @user_bp.route('/edit', methods=['POST'])
 def edit_profile():
     user_id = get_user_id_from_jwt()
     if not user_id:
-        return jsonify({'message' : 'Not authorized'}), 401
+        return jsonify({'message' : 'Not authorized, please log in.'}), 401
     
     user = User.query.filter_by(id=user_id).first()
     if not user:
@@ -103,46 +99,19 @@ def edit_profile():
         db.session.rollback()
         return jsonify({'message': f'An error occurred: {str(e)}'}), 500
 
-
-
-UPLOAD_FOLDER = "public/uploads/"
-if not os.path.exists(UPLOAD_FOLDER):
-    os.makedirs(UPLOAD_FOLDER)
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
-def allowed_file(filename):
-    return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
-
-"""
-Route pour upload une photo de profil.
-
-Cette route accepte uniquement les requêtes POST. Elle vérifie d'abord si un fichier a été envoyé
-dans la requête. Si aucun fichier n'est trouvé, elle retourne un message d'erreur avec le code 404.
-Ensuite, elle vérifie si le fichier est valide et s'il est autorisé (en utilisant la fonction allowed_file).
-Si le fichier est valide, il est sauvegardé dans le dossier UPLOAD_FOLDER après avoir sécurisé son nom
-de fichier avec secure_filename. Une protection contre les attaques de type path traversal est également
-mise en place pour s'assurer que le chemin du fichier est valide. Si tout se passe bien, un message de
-succès est retourné avec l'URL du fichier uploadé.
-
-De plus la route doit assigner l'image à la personne, donc elle prend le nom du fichier et le modifie pour avoir un id unique
-ensuite on modifie le profile_picture de l'utilisateur pour mettre le meme que celui du fichier uploadé. 
-Returns:
-    Response: Un objet JSON contenant un message et, en cas de succès, l'URL du fichier uploadé.
-"""
 @user_bp.route('/upload-profile-picture', methods=['POST'])
 def upload_profile_picture():
     if request.method == 'POST':
         user_id = get_user_id_from_jwt()
         if not user_id:
-            return jsonify({'message' : 'Not authorized'}), 401
+            return jsonify({'message' : 'Not authorized, please log in.'}), 401
         
         user = User.query.filter_by(id=user_id).first()
         if not user:
             return jsonify({'message': 'User not found'}), 404
 
         if 'file' not in request.files:
-            return jsonify({'message': 'File not found' }), 404
+            return jsonify({'message': 'The object File was not found' }), 404
         
         file = request.files.get('file')
         if not file:
@@ -152,11 +121,9 @@ def upload_profile_picture():
             filename = secure_filename(file.filename)
             filepath = os.path.join(UPLOAD_FOLDER, filename)
 
-            if not filepath.startswith(UPLOAD_FOLDER):  # ça permet d'éviter les attaques par chemin truc bidule
-                return jsonify({'message': 'Invalid file path' }), 400
+            if not filepath.startswith(UPLOAD_FOLDER):  # prevent Directory traversal attack
+                return jsonify({'message': 'Invalid file path, please provide a good filename.' }), 400
             
-
-            # une fois l'auth vérifiée on assigne la photo uploadée a l'utilisateur et on update son profil
             file.save(filepath)
             try:
                 user.profile_picture = filename
@@ -169,37 +136,18 @@ def upload_profile_picture():
                 'message': 'File uploaded successfully',
                 'file_url': f'/user/profile-picture/{filename}'
             }), 200
-        return jsonify({
-            'message': 'Unsupported Media Type',
-        }), 415
-    return jsonify({
-        'message': 'Method not allowed',
-    }), 405
+        return jsonify({'message': 'Unsupported Media Type'}), 415
+    return jsonify({'message': 'Method not allowed'}), 405
 
-
-"""
-Récupération des photos de profil dans le path
-"""
 @user_bp.route('/profile-picture/<filename>', methods=['GET'])
 def get_profile_picture(filename):
     return send_from_directory(UPLOAD_FOLDER, filename, as_attachment=False)
 
-
-
-"""affiche le profil d'une personne
-! il faut etre connecté pour voir le profil d'un utilisateur
-retourne un json contenant les informations: 
-- username
-- profile_picture
-- date_creation
-- bio
-- site web
-"""
-@user_bp.route('/profile/<username>', methods=['GET', 'POST'])
+@user_bp.route('/profile/<username>', methods=['GET'])
 def profile_user(username):
-    user_id = get_user_id_from_jwt() # il faut etre connecté pour afficher le profil d'une personne
+    user_id = get_user_id_from_jwt()
     if not user_id:
-        return jsonify({'message': 'Need to be connected - Unauthorized'}), 401
+        return jsonify({'message': 'Not authorized, please log in.'}), 401
 
     user_other = User.query.filter_by(username=username).first()
     if not user_other:  
@@ -213,25 +161,12 @@ def profile_user(username):
         'website': user_other.website
     }), 200
 
-    
-
-"""
-Cette route permet de rechercher des utilisateurs par leur nom d'utilisateur. Elle effectue une recherche
-insensible à la casse en utilisant le nom d'utilisateur fourni comme sous-chaîne. Si des utilisateurs correspondants
-sont trouvés, leurs noms d'utilisateur et photos de profil sont retournés dans la réponse.
-Paramètres de la requête :
-- username (str) : Le nom d'utilisateur ou une partie du nom d'utilisateur à rechercher.
-Réponses :
-- 200 OK : Retourne un objet JSON contenant une liste d'utilisateurs avec leurs noms d'utilisateur et photos de profil.
-- 404 Not Found : Retourne un objet JSON avec un message indiquant qu'aucun utilisateur n'a été trouvé.
-- 500 Internal Server Error : Retourne un objet JSON avec un message d'erreur en cas d'exception.
-"""
 @user_bp.route('/search/<username>', methods=['GET'])
 def search_people(username):
     try:
         users = User.query.filter(User.username.ilike(f"%{username}%")).all() # évite toutes erreurs avec la sous chaine 
         if not users:
-            return jsonify({'message': 'No users found'}), 404
+            return jsonify({'message': 'No user found'}), 404
 
         result = [{
             'username': user.username,

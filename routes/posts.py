@@ -4,18 +4,12 @@ from models import User, Post, Follow
 from routes.auth import get_user_id_from_jwt
 from routes.user import allowed_file, UPLOAD_FOLDER
 from werkzeug.utils import secure_filename
+from sqlalchemy.sql import exists
 import os
+import uuid
 
 post_bp = Blueprint('post_bp', __name__, url_prefix='/post')
 
-
-"""
-Upload un nouveau post
-- image_url => upload photo 
-- caption 
-- hidden_tag => false/true
-- user_id 
-"""
 @post_bp.route('/upload', methods=['POST'])
 def upload_post():
     caption = request.form.get("caption")
@@ -72,22 +66,20 @@ def upload_post():
         'message' : 'Unsupported Media Type',
     }), 415
 
-
-"""
-route pour afficher les infos d'un post
-/!\ à faire - renvoyer les commentaires et likes associés au post
-"""
 @post_bp.route('/<id_post>', methods=['GET'])
 def show_post(id_post):
     if not id_post:
         return jsonify({'message': 'Missing the post id'}), 400
 
-    #post = Post.query.filter_by(id=id_post).first()
-    post = db.session.query(Post).filter_by(id=id_post).first()
+    try: 
+        uuid_obj = uuid.UUID(id_post)
+    except ValueError:
+        return jsonify({'message': 'Invalid post ID format please insert only UUID format'}), 400
 
-    user = User.query.get(post.user_id)
+    post = db.session.query(Post).filter_by(id=id_post).first()
     if not post:
         return jsonify({'message': "The post was not found"}), 404
+    user = User.query.get(post.user_id)
 
     return jsonify({
         'message': 'Post found',
@@ -101,20 +93,14 @@ def show_post(id_post):
         }
     }), 200
 
-""" gestion des posts du feed 
-1. Récupérer la liste des utilisateurs suivis par l'utilisateur connecté.
-2. Récupérer leurs posts, triés par date (du plus récent au plus ancien).
-3. Récupérer une liste d'autres utilisateurs (exclure ceux suivis).
-4. Récupérer aléatoirement des posts parmi ces utilisateurs
-5. Fusionner les deux listes (posts des abonnés en premier et par date décroissante)
-"""
-@post_bp.route('/feed', methods=['GET'])
-def feed_post():
+@post_bp.route('/feed/global', methods=['GET'])
+def global_feed():
+    """gestion des posts du feed pour rappel le feed est la page qui rassemble tous les récents posts donc c'est juste un énorme fetch des 10 derniers posts et coté front si la personne scroll au bout du huitieme ça relance un requete"""
     user_id = get_user_id_from_jwt()
     if not user_id:
         return jsonify({'message' : 'Not authorized'}), 401
 
-    feed = get_feed(user_id) # array
+    posts = db.session.query(Post).order_by(Post.created_at.desc()).limit(10).all() 
     serialized_feed = [
         {
             'id': str(post.id),
@@ -125,52 +111,121 @@ def feed_post():
             'user_profile': User.query.get(post.user_id).profile_picture,
             'created_at': str(post.created_at),
         }
-        for post in feed
+        for post in posts
     ]
     return jsonify({
         'message': 'Feed successfully loaded',
         'content': serialized_feed
     }), 200
 
-def get_followed_posts(user_id):
-    # récupération des utilisateurs suivis
-    followed_users = db.session.query(Follow.followed_id).filter(Follow.followed_id==user_id).subquery()
-    # récup des 2 derniers posts des abonnements
-    followed_posts = db.session.query(Post).filter(Post.user_id.in_(followed_users)).order_by(Post.created_at.desc()).limit(2).all()
-    return followed_posts
+@post_bp.route('/delete/<post_id>', methods=['DELETE'])
+def delete_post(post_id):
+    user_id = get_user_id_from_jwt()
+    if not user_id:
+        return jsonify({'message' : 'Not authorized, please log in.'}), 401
 
-def get_random_posts(user_id):
-    followed_users = db.session.query(Follow.followed_id).filter(Follow.follower_id == user_id).subquery()
-    # récup 10 personnes aléatoires en excluant ceux qui sont suivis 
-    random_users = db.session.query(User.id).filter(~User.id.in_(followed_users)).order_by(db.func.random()).limit(10).subquery()
-    # retourne 1 post le plus récent par personne
-    random_post = db.session.query(Post).filter(Post.user_id.in_(random_users)).order_by(db.func.random()).first()
-    return random_post
+    # bug relou: le parametre dans la requete n'est pas un str mais un uuid et donc les caractere comme q, z ne sont pas pris en charge et donc font crash la requete
+    try: 
+        uuid_obj = uuid.UUID(post_id)
+    except ValueError:
+        return jsonify({'message': 'Invalid post ID format please insert only UUID format'}), 400
+    
+    post_exists = db.session.query(exists().where(Post.id == post_id)).scalar()
+    if not post_exists:
+        return jsonify({'message': 'Post not found'}), 404
+    
+    post = Post.query.filter_by(id=post_id).first()
+    if str(post.user_id) != user_id:
+        return jsonify({'message': 'You are not authorized to delete this post'}), 403
+    
+    try:
+        db.session.delete(post)
+        db.session.commit()
+        return jsonify({'message': 'Post deleted successfully'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'message': f'An error occurred while deleting the post: {str(e)}'
+            }), 500
 
-"""merging des fonctions followed_posts & random_post sous forme d'array"""
-def get_feed(user_id):
-    posts = get_followed_posts(user_id)
-    random_post = get_random_posts(user_id)
-    if random_post:
-        posts.append(random_post)
-    return posts
+@post_bp.route('/hide/<post_id>', methods=['POST'])
+def hide_post(post_id):
+    user_id = get_user_id_from_jwt()
+    if not user_id:
+        return jsonify({'message' : 'Not authorized, please log in.'}), 401
 
+    try: 
+        uuid_obj = uuid.UUID(post_id)
+    except ValueError:
+        return jsonify({'message': 'Invalid post ID format please insert only UUID format'}), 400
+    
+    post_exists = db.session.query(exists().where(Post.id == post_id)).scalar()
+    if not post_exists:
+        return jsonify({'message': 'Post not found'}), 404
+    
+    post = Post.query.filter_by(id=post_id).first()
+    if str(post.user_id) != user_id:
+        return jsonify({'message': 'You are not authorized to edit the visibility of this post'}), 403
+    
+    if post.hidden_tag is True:
+        attribute = False
+    else: 
+        attribute = True
+    try:
+        post.hidden_tag = attribute
+        db.session.commit()
+        return jsonify({
+            'message': 'Post passed to hidden successfully',
+            'hidden_tag': post.hidden_tag
+            }), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'message': f'An error occurred while changing the post attribute: {str(e)}'
+            }), 500
 
+@post_bp.route('/edit/<post_id>', methods=['POST'])
+def edit_post(post_id):
+    user_id = get_user_id_from_jwt()
+    if not user_id:
+        return jsonify({'message' : 'Not authorized, please log in.'}), 401
 
-@post_bp.route('/delete', methods=['POST'])
-def delete_post():
-    return
+    try: 
+        uuid_obj = uuid.UUID(post_id)
+    except ValueError:
+        return jsonify({'message': 'Invalid post ID format please insert only UUID format'}), 400
+    
+    post_exists = db.session.query(exists().where(Post.id == post_id)).scalar()
+    if not post_exists:
+        return jsonify({'message': 'Post not found'}), 404
+    
+    post = Post.query.filter_by(id=post_id).first()
+    if str(post.user_id) != user_id:
+        return jsonify({'message': 'You are not authorized to edit this post'}), 403
+    
+    data = request.get_json()
+    last_caption = post.caption
+    new_caption = data.get('caption')
+    if not new_caption:
+        return jsonify({'message': 'You cannot edit a post without new data...'}), 400
+    if len(new_caption) > 200:
+        return jsonify({"error": "The caption is too long (max 200 chars)"}), 400
 
-# Récupérer tous les posts (ex: page Explore).
-@post_bp.route('/get-all', methods=['POST'])
-def get_all_post():
-    return
+    post.caption = new_caption
+    try:
+        db.session.commit()
+        return jsonify({
+            'message': 'Post edited successfully',
+            'new_caption': new_caption,
+            'last_caption': last_caption
+        }), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'message': f'An error occurred: {str(e)}'}), 500
 
-# Récupérer les posts d'un utilisateur spécifique (ex: profil utilisateur).
-# récupérer tous les posts meme ceux cachés si c'est l'utilisateur concerné (token jwt = user_id)
-# sinon simplement afficher les posts publics de la personne
-@post_bp.route('/get-user/<user>', methods=['POST'])
+@post_bp.route('/feed/<user>', methods=['GET'])
 def get_user_post(user):
+    """Récupérer les posts d'un utilisateur spécifique (ex: profil utilisateur) récupérer tous les posts meme ceux cachés si c'est l'utilisateur concerné (token jwt = user_id) sinon simplement afficher les posts publics de la personne"""
     if not user:
         return jsonify({'message' : 'User not request'}), 401
     target_user = User.query.filter_by(username=user).first().id
@@ -211,7 +266,31 @@ def get_user_post(user):
         'post': serialized_posts
     })
 
-# Récupérer les posts des personnes suivies (ex: feed principal).
-@post_bp.route('/get-followed', methods=['POST'])
-def get_followed_post():
-    return
+@post_bp.route('/feed', methods=['GET'])
+def feed_perso():
+    user_id = get_user_id_from_jwt()
+    if not user_id:
+        return jsonify({'message' : 'Not authorized'}), 401
+
+    posts = get_followed_posts(user_id)
+    serialized_feed = [
+        {
+            'id': post.id,
+            'image_url': post.image_url,
+            'caption': post.caption,
+            'user_id': post.user_id,
+            'username': User.query.get(post.user_id).username,
+            'user_profile': User.query.get(post.user_id).profile_picture,
+            'created_at': post.created_at,
+        }
+        for post in posts
+    ]
+    return jsonify({
+        'message': 'Feed successfully loaded',
+        'content': serialized_feed
+    }), 200
+
+def get_followed_posts(user_id):
+        followed_users = db.session.query(Follow.followed_id).filter(Follow.follower_id == user_id).subquery()
+        followed_posts = db.session.query(Post).filter(Post.user_id.in_(followed_users)).order_by(Post.created_at.desc()).all()
+        return followed_posts

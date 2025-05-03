@@ -39,9 +39,6 @@ def follow():
     if not user_id:
         return jsonify({'message': 'Unauthorized, you are not connected or refresh your credentials'}), 401
 
-    # probleme coté front revoir l'envoie des objets, soit j'envoie un objet soit j'envoie un string dans le back pour le nom des utilisateurs
-    # alors mettre un point commun
-    # stratégie à faire => un objet avec AlertProps(message: string & type: array) & FollowUser(username: string & profile: string) dans un objet unique FollowButtonProps(AlertProps & FollowUser)
 
     user_other = User.query.filter_by(username=username_other).first()
     if not user_other:
@@ -165,7 +162,7 @@ Returns:
 """
 
 
-@follow_bp.route('/get-followed/<username>', methods=['GET', 'POST'])
+@follow_bp.route('/get-followed/<username>', methods=['GET'])
 def get_user_followed(username):
     user = User.query.filter_by(username=username).first()
 
@@ -200,7 +197,7 @@ Supprimer un abonné
 """
 
 
-@follow_bp.route('/remove-follower', methods=['GET', 'POST'])
+@follow_bp.route('/remove-follower', methods=['DELETE'])
 def remove_follower():
     data = request.get_json()
 

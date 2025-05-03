@@ -5,16 +5,7 @@ from routes.auth import get_user_id_from_jwt
 
 follow_bp = Blueprint('follows', __name__, url_prefix='/follow')
 
-"""
-Abonnement d'un utilisateur
-récupération de l'id de l'utilisateur connecté + l'username de l'utilisateur à suivre
-on vérifie si l'utilisateur connecté est déjà abonné à l'utilisateur à suivre
-si c'est le cas on retourne un message d'erreur, sinon on crée un nouvel abonnement
-de plus un utilisateur ne peut pas se suivre lui même
-"""
-
-
-@follow_bp.route('/user', methods=['GET', 'POST', 'OPTIONS'])
+@follow_bp.route('/user', methods=['POST', 'OPTIONS'])
 def follow():
     if request.method == 'OPTIONS':
         response = jsonify({})
@@ -69,21 +60,15 @@ def follow():
         db.session.rollback()
         return jsonify({'message': f'An error occurred: {str(e)}'}), 500
 
-
-"""
-Désabonnement d'un utilisateur
-"""
-
-
-@follow_bp.route('/unfollow', methods=['GET', 'POST'])
+@follow_bp.route('/unfollow', methods=['POST'])
 def unfollow():
     data = request.get_json()
 
-    username_other = data.get('username_other')  # username de l'utilisateur à suivre
+    username_other = data.get('username_other')
     if not data or 'username_other' not in data:
         return jsonify({'message': 'Missing username_other field'}), 404
 
-    user_id = get_user_id_from_jwt()  # id de l'utilisateur connecté
+    user_id = get_user_id_from_jwt()
     if not user_id:
         return jsonify({'message': 'Unauthorized'}), 401
 
@@ -113,21 +98,11 @@ def unfollow():
     else:
         return jsonify({'message': 'Follow query not found'}), 404
 
-
-"""
-Récupère la liste des utilisateurs qui suivent l'utilisateur spécifié
-
-Args:
-    user_id: L'ID de l'utilisateur dont vous souhaitez récupérer les followers
-
-Returns:
-    Une liste d'objets User représentant ses abonnés
-"""
-
-
-@follow_bp.route('/get-follow/<username>', methods=['GET', 'POST'])
+@follow_bp.route('/get-follow/<username>', methods=['GET'])
 def get_user_followers(username):
     user_id = User.query.filter_by(username=username).first().id
+    if not user_id:
+        return jsonify({'message': 'User not found'}), 404
     try:
         followers = db.session.query(
             User.id,
@@ -149,18 +124,6 @@ def get_user_followers(username):
         }), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-
-
-"""
-Récupère la liste des utilisateurs l'utilisateur spécifié suit
-
-Args:
-    user_id: L'ID de l'utilisateur dont vous souhaitez récupérer ses abonnements
-
-Returns:
-    Une liste d'objets User représentant ses abonnements
-"""
-
 
 @follow_bp.route('/get-followed/<username>', methods=['GET'])
 def get_user_followed(username):
@@ -191,21 +154,15 @@ def get_user_followed(username):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-
-"""
-Supprimer un abonné
-"""
-
-
 @follow_bp.route('/remove-follower', methods=['DELETE'])
 def remove_follower():
     data = request.get_json()
 
-    username_other = data.get('username_other')  # username de l'utilisateur à suivre
+    username_other = data.get('username_other')
     if not data or 'username_other' not in data:
         return jsonify({'message': 'Missing username_other field'}), 404
 
-    user_id = get_user_id_from_jwt()  # id de l'utilisateur connecté
+    user_id = get_user_id_from_jwt()
     if not user_id:
         return jsonify({'message': 'Unauthorized'}), 401
 

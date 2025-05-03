@@ -9,16 +9,8 @@ import os
 dotenv.load_dotenv()
 
 auth_bp = Blueprint('auth_bp', __name__, url_prefix='/auth')
-
 secret_key = os.environ.get('SECRET_KEY_JWT')
 
-"""
-Inscription
-L"utilisateur remplit le formulaire dans React et clique sur "S"inscrire".
-React envoie une requête POST /auth/register avec email, username, password.
-Flask hache le mot de passe, stocke l"utilisateur en base et renvoie une réponse 201 Created.
-React redirige vers la page de connexion.
-"""
 @auth_bp.route('/register', methods=['POST'])
 def register():
     data = request.get_json()
@@ -43,16 +35,6 @@ def register():
         db.session.rollback()
         return jsonify({"message": f"an error occurred: {str(e)}"}), 500
     
-    
-
-"""
-Connexion
-L"utilisateur entre son email/mot de passe et clique sur "Se connecter".
-React envoie une requête POST /auth/login.
-Flask vérifie les identifiants et génère le token jwt à partir de l'id pour enregistrer la session.
-Flask renvoie une réponse 200 OK et React stocke l"état utilisateur.
-React redirige vers la page d"accueil.
-"""
 @auth_bp.route('/login', methods=['POST'])
 def login():
     data = request.get_json()
@@ -76,10 +58,6 @@ def login():
     else:
         return jsonify({"message": "Invalid credentials"}), 401
     
-
-"""Vérification du token JWT
-return true or false for JWT in body 
-"""
 @auth_bp.route('/token', methods=['POST'])
 def token():
     data = request.get_json()
@@ -90,8 +68,6 @@ def token():
         return jsonify({"valid": True}), 200
     else:
         return jsonify({"valid": False}), 401
-
-
 
 """Retourne un user id pour un token JWT en paramètre"""
 def get_user_id_from_jwt():
@@ -104,7 +80,6 @@ def get_user_id_from_jwt():
         return None
     return data['id']
     
-
 """Retourne les valeurs décodées du token JWT"""
 def decode_jwt(token):
     try:

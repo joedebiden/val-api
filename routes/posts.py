@@ -148,42 +148,6 @@ def delete_post(post_id):
             'message': f'An error occurred while deleting the post: {str(e)}'
             }), 500
 
-@post_bp.route('/hide/<post_id>', methods=['POST'])
-def hide_post(post_id):
-    user_id = get_user_id_from_jwt()
-    if not user_id:
-        return jsonify({'message' : 'Not authorized, please log in.'}), 401
-
-    try: 
-        uuid_obj = uuid.UUID(post_id)
-    except ValueError:
-        return jsonify({'message': 'Invalid post ID format please insert only UUID format'}), 400
-    
-    post_exists = db.session.query(exists().where(Post.id == post_id)).scalar()
-    if not post_exists:
-        return jsonify({'message': 'Post not found'}), 404
-    
-    post = Post.query.filter_by(id=post_id).first()
-    if str(post.user_id) != user_id:
-        return jsonify({'message': 'You are not authorized to edit the visibility of this post'}), 403
-    
-    if post.hidden_tag is True:
-        attribute = False
-    else: 
-        attribute = True
-    try:
-        post.hidden_tag = attribute
-        db.session.commit()
-        return jsonify({
-            'message': 'Post passed to hidden successfully',
-            'hidden_tag': post.hidden_tag
-            }), 200
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({
-            'message': f'An error occurred while changing the post attribute: {str(e)}'
-            }), 500
-
 @post_bp.route('/edit/<post_id>', methods=['POST'])
 def edit_post(post_id):
     user_id = get_user_id_from_jwt()
@@ -205,19 +169,28 @@ def edit_post(post_id):
     
     data = request.get_json()
     last_caption = post.caption
+    last_tag = post.hidden_tag
     new_caption = data.get('caption')
-    if not new_caption:
-        return jsonify({'message': 'You cannot edit a post without new data...'}), 400
+    new_tag = data.get('hidden_tag')
+
+    if new_caption is not None:
+        post.caption = new_caption
+    if new_tag is not None:
+        post.hidden_tag = new_tag
+    
+    if post.caption == last_caption and post.hidden_tag == last_tag:
+        return jsonify({"message": "No changes detected"}), 100
+    
     if len(new_caption) > 200:
         return jsonify({"error": "The caption is too long (max 200 chars)"}), 400
 
-    post.caption = new_caption
     try:
         db.session.commit()
         return jsonify({
             'message': 'Post edited successfully',
             'new_caption': new_caption,
-            'last_caption': last_caption
+            'last_caption': last_caption,
+            'hidden_tag': post.hidden_tag,
         }), 200
     except Exception as e:
         db.session.rollback()

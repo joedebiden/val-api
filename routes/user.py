@@ -162,7 +162,7 @@ def profile_user(username):
     }), 200
 
 @user_bp.route('/search/<username>', methods=['GET'])
-def search_people(username):
+def search_people(username):    
     try:
         users = User.query.filter(User.username.ilike(f"%{username}%")).all() # évite toutes erreurs avec la sous chaine 
         if not users:

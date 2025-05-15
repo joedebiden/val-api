@@ -90,6 +90,7 @@ def show_post(id_post):
             'username': user.username,
             'user_profile_url': user.profile_picture,
             'created_at': str(post.created_at),
+            'hidden_tag': post.hidden_tag
         }
     }), 200
 
@@ -179,7 +180,7 @@ def edit_post(post_id):
         post.hidden_tag = new_tag
     
     if post.caption == last_caption and post.hidden_tag == last_tag:
-        return jsonify({"message": "No changes detected"}), 100
+        return jsonify({"message": "No changes detected"}), 204
     
     if len(new_caption) > 200:
         return jsonify({"error": "The caption is too long (max 200 chars)"}), 400

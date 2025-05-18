@@ -23,7 +23,7 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "${API_PORT:-80}:5000"
+      - "${API_PORT:-9090}:5000"
     environment:
       - FLASK_DEBUG=False
       - DB_URI=postgresql://${POSTGRES_USER:-val}:${POSTGRES_PASSWORD:-PL4ES3CH4NG3M3}@db:5432/${POSTGRES_DB:-val}

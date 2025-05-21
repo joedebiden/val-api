@@ -116,7 +116,7 @@ def create_app():
 
         return jsonify(resp)
 
-    @app.route('/flask-health-check')
+    @app.route('/health')
     def flask_health_check():
         return "success"
 

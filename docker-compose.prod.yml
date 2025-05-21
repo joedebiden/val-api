@@ -1,6 +1,6 @@
 services:
-  db:
-    container_name: postgres
+
+  postgres:
     image: postgres:16.8-alpine
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -15,16 +15,15 @@ services:
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U val"]
       interval: 10s
-      timeout: 5s
-      retries: 5
+      timeout: 10s
+      retries: 3
 
-  api:
-    container_name: flask
+  flask:
     build:
-      context: .
       dockerfile: Dockerfile
+    restart: always
     ports:
-      - "${API_PORT:-9090}:5000"
+      - "${API_PORT:-80}:5000"
     environment:
       - FLASK_DEBUG=False
       - DB_URI=postgresql://${POSTGRES_USER:-val}:${POSTGRES_PASSWORD:-PL4ES3CH4NG3M3}@db:5432/${POSTGRES_DB:-val}
@@ -32,11 +31,31 @@ services:
       - SECRET_KEY_JWT=${SECRET_KEY_JWT:-PL4ES3CH4NG3M3}
       - GENERATE_MIGRATIONS=false
     depends_on:
-      db:
+      postgres:
         condition: service_healthy
     networks:
       - val-network
+    
+  nginx-proxy:
+    build: 
+      dockerfile: nginx/Dockerfile
     restart: always
+    volumes:
+      - ./nginx/default.conf:/tmp/default.conf
+    environment:
+      - FLASK_SERVER_ADDR=flask-app:8000
+    ports:
+      - "80:80"
+    depends_on:
+      - flask
+    healthcheck:
+      test: ["CMD-SHELL", "curl --silent --fail localhost:80/health-check || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 3
+    command: /app/start.sh
+
+
 
 networks:
   val-network:

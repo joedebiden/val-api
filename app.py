@@ -1,7 +1,7 @@
 import os, dotenv, sys
 from urllib import request
 
-from flask import Flask, render_template, request, redirect, flash, url_for
+from flask import Flask, render_template, request, redirect, flash, url_for, jsonify
 from flask_swagger_ui import get_swaggerui_blueprint
 from flask_login import LoginManager, login_user
 from werkzeug.security import check_password_hash
@@ -99,10 +99,30 @@ def create_app():
                 status=200,
                 mimetype='application/json'
             )
+    
+    @app.route('/cache-me')
+    def cache():
+        return "nginx will cache this response"
+    
+    @app.route('/info')
+    def info():
+
+        resp = {
+            'connecting_ip': request.headers['X-Real-IP'],
+            'proxy_ip': request.headers['X-Forwarded-For'],
+            'host': request.headers['Host'],
+            'user-agent': request.headers['User-Agent']
+        }
+
+        return jsonify(resp)
+
+    @app.route('/flask-health-check')
+    def flask_health_check():
+        return "success"
 
     return app
 
 app = create_app()
 
-if __name__ == '__main__':
-    app.run()
+# if __name__ == '__main__':
+    # app.run()

@@ -1,16 +1,18 @@
-services:
+name: valenstagram
 
-  postgres:
+services:
+  val-db:
+    container_name: val-db
     image: postgres:16.8-alpine
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - ./.docker/postgres/data:/var/lib/postgresql/data
       - ./docker/postgres/install-extensions.sql:/docker-entrypoint-initdb.d/install-extensions.sql
+    ports:
+      - '5432:5432'
     environment:
-      - POSTGRES_DB=${POSTGRES_DB:-val}
-      - POSTGRES_USER=${POSTGRES_USER:-val}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-PL4ES3CH4NG3M3}
-    networks:
-      - val-network
+      - POSTGRES_DB=val
+      - POSTGRES_USER=val
+      - POSTGRES_PASSWORD=val
     restart: always
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U val"]
@@ -18,36 +20,18 @@ services:
       timeout: 10s
       retries: 3
 
-  flask:
-    build:
-      dockerfile: Dockerfile
-    restart: always
-    ports:
-      - "${API_PORT:-80}:5000"
-    environment:
-      - FLASK_DEBUG=False
-      - DB_URI=postgresql://${POSTGRES_USER:-val}:${POSTGRES_PASSWORD:-PL4ES3CH4NG3M3}@db:5432/${POSTGRES_DB:-val}
-      - SECRET_KEY_APP=${SECRET_KEY_APP:-PL4ES3CH4NG3M3}
-      - SECRET_KEY_JWT=${SECRET_KEY_JWT:-PL4ES3CH4NG3M3}
-      - GENERATE_MIGRATIONS=false
-    depends_on:
-      postgres:
-        condition: service_healthy
-    networks:
-      - val-network
-    
-  nginx-proxy:
+  nginx:
+    container_name: nginx
     build: 
-      dockerfile: nginx/Dockerfile
+      context: ./nginx
+      dockerfile: Dockerfile
+    ports:
+      - '80:80'
     restart: always
     volumes:
       - ./nginx/default.conf:/tmp/default.conf
     environment:
-      - FLASK_SERVER_ADDR=flask-app:8000
-    ports:
-      - "80:80"
-    depends_on:
-      - flask
+      - FLASK_SERVER_ADDR=api:5000
     healthcheck:
       test: ["CMD-SHELL", "curl --silent --fail localhost:80/health-check || exit 1"]
       interval: 10s
@@ -55,11 +39,20 @@ services:
       retries: 3
     command: /app/start.sh
 
+  api:
+    container_name: api
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "${API_PORT:-80}:5000"
+    environment:
+      - SECRET_KEY=${SECRET_KEY:-PL4ES3CH4NG3M3}
+      - SQLALCHEMY_DATABASE_URI=postgresql://val:val@val-db:5432/val
+      - FLASK_DEBUG=${FLASK_DEBUG:-0}
+    depends_on:
+      val-db:
+        condition: service_healthy
+    command: gunicorn -w 3 -t 60 -b 0.0.0.0:8000 app:app    
 
-
-networks:
-  val-network:
-    driver: bridge
-
-volumes:
-  postgres_data:

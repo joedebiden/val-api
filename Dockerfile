@@ -27,9 +27,9 @@ RUN export FLASK_APP=app.py
 RUN pip install -r requirements.txt
 
 # migrate database
-RUN chmod +x docker-entrypoint.sh
+# RUN chmod +x docker-entrypoint.sh
 
 EXPOSE 5000
 
-ENTRYPOINT ["./docker-entrypoint.sh"]
+# ENTRYPOINT ["/home/app/docker-entrypoint.sh"]
 CMD ["python", "app.py"]

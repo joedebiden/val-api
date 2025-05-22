@@ -30,22 +30,22 @@ services:
       dockerfile: Dockerfile
     restart: always
     expose:
-      - 8000
+      - 5000
     environment:
       - SECRET_KEY=PL4ES3CH4NG3M3
       - SQLALCHEMY_DATABASE_URI=postgresql://val:val@val-db:5432/val
       - FLASK_DEBUG=False
       - SWAGGER_URL=/api/docs
       - API_URL=/static/openapi.json
-      - SERVER_PORT=8000
+      - SERVER_PORT=5000
       - SERVER_HOST=0.0.0.0
       - WORKERS=${GUNICORN_WORKERS:-3}
     depends_on:
       val-db:
         condition: service_healthy
-    command: gunicorn --workers ${GUNICORN_WORKERS:-3} --timeout 60 --bind 0.0.0.0:8000 wsgi:app
+    command: gunicorn --workers ${GUNICORN_WORKERS:-3} --timeout 60 --bind 0.0.0.0:5000 wsgi:app
     healthcheck:
-      test: ["CMD-SHELL", "curl --silent --fail http://localhost:8000/health || exit 1"]
+      test: ["CMD-SHELL", "curl --silent --fail http://localhost:5000/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -62,21 +62,23 @@ services:
       context: ./nginx
       dockerfile: Dockerfile
     ports:
-      - '80:80'
+      - '8888:80'
     restart: always
     volumes:
-      - ./nginx/default.conf:/tmp/default.conf
+      - ./nginx/default.conf:/tmp/default.conf:ro
       - ./public/uploads:/home/app/public/uploads:ro
+      - ./nginx/logs:/var/log/nginx
     environment:
       - FLASK_SERVER_ADDR=api:5000
     depends_on:
       api:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl --silent --fail localhost:80/health-check || exit 1"]
+      test: ["CMD-SHELL", "curl --silent --fail localhost:80/health || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 3
+      start_period: 30s
     networks:
       - frontend
 

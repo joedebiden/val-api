@@ -16,7 +16,7 @@ dotenv.load_dotenv()
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY_APP')
     basedir = os.path.abspath(os.path.dirname(__file__))
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DB_URI')
+    SQLALCHEMY_DATABASE_URI = os.environ.get('SQLALCHEMY_DATABASE_URI') or os.environ.get('DB_URI')
     DEBUG = os.environ.get('FLASK_DEBUG')
 
 

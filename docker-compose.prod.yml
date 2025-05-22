@@ -5,7 +5,7 @@ services:
     container_name: val-db
     image: postgres:16.8-alpine
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - ./.docker/postgres/data:/var/lib/postgresql/data
       - ./docker/postgres/install-extensions.sql:/docker-entrypoint-initdb.d/install-extensions.sql
     ports:
       - '5432:5432'

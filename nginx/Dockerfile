@@ -3,8 +3,9 @@ FROM nginx:1.27.5-alpine
 # Add bash for boot cmd
 RUN apk add --no-cache bash curl
 
-COPY --chown=nginx:nginx nginx/nginx.conf /etc/nginx/nginx.conf
-COPY --chown=nginx:nginx nginx/start.sh /home/app/start.sh
+COPY --chown=nginx:nginx nginx.conf /etc/nginx/nginx.conf
+COPY --chown=nginx:nginx start.sh /app/start.sh 
+# start.sh -> LF type of file 
 
 WORKDIR /app
 
@@ -30,4 +31,4 @@ RUN mkdir -p /var/log/nginx
 
 USER nginx
 
-CMD ["/home/app/start.sh"]
+CMD ["/app/start.sh"]

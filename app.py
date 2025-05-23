@@ -1,7 +1,7 @@
 import os, dotenv, sys
 from urllib import request
 
-from flask import Flask, render_template, request, redirect, flash, url_for
+from flask import Flask, render_template, request, redirect, flash, url_for, jsonify
 from flask_swagger_ui import get_swaggerui_blueprint
 from flask_login import LoginManager, login_user
 from werkzeug.security import check_password_hash
@@ -16,7 +16,7 @@ dotenv.load_dotenv()
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY_APP')
     basedir = os.path.abspath(os.path.dirname(__file__))
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DB_URI')
+    SQLALCHEMY_DATABASE_URI = os.environ.get('SQLALCHEMY_DATABASE_URI') or os.environ.get('DB_URI')
     DEBUG = os.environ.get('FLASK_DEBUG')
 
 
@@ -99,10 +99,30 @@ def create_app():
                 status=200,
                 mimetype='application/json'
             )
+    
+    @app.route('/cache-me')
+    def cache():
+        return "nginx will cache this response"
+    
+    @app.route('/info')
+    def info():
+
+        resp = {
+            'connecting_ip': request.headers['X-Real-IP'],
+            'proxy_ip': request.headers['X-Forwarded-For'],
+            'host': request.headers['Host'],
+            'user-agent': request.headers['User-Agent']
+        }
+
+        return jsonify(resp)
+
+    @app.route('/health')
+    def flask_health_check():
+        return "success"
 
     return app
 
 app = create_app()
 
-if __name__ == '__main__':
-    app.run()
+# if __name__ == '__main__':
+    # app.run()

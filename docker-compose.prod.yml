@@ -1,45 +1,90 @@
+name: valenstagram
+
 services:
-  db:
-    container_name: db
+  val-db:
+    container_name: val-db
     image: postgres:16.8-alpine
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - ./.docker/postgres/data:/var/lib/postgresql/data
       - ./docker/postgres/install-extensions.sql:/docker-entrypoint-initdb.d/install-extensions.sql
+    ports:
+      - '5432:5432'
     environment:
-      - POSTGRES_DB=${POSTGRES_DB:-val}
-      - POSTGRES_USER=${POSTGRES_USER:-val}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-PL4ES3CH4NG3M3}
-    networks:
-      - val-network
+      - POSTGRES_DB=val
+      - POSTGRES_USER=val
+      - POSTGRES_PASSWORD=val
     restart: always
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U val"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - backend
 
   api:
+    container_name: api
     build:
-      context: .
+      context: ./
+      dockerfile: Dockerfile
+    restart: always
+    expose:
+      - 5000
+    environment:
+      - SECRET_KEY=PL4ES3CH4NG3M3
+      - SQLALCHEMY_DATABASE_URI=postgresql://val:val@val-db:5432/val
+      - FLASK_DEBUG=False
+      - SWAGGER_URL=/api/docs
+      - API_URL=/static/openapi.json
+      - SERVER_PORT=5000
+      - SERVER_HOST=0.0.0.0
+      - WORKERS=${GUNICORN_WORKERS:-3}
+    depends_on:
+      val-db:
+        condition: service_healthy
+    command: gunicorn --workers ${GUNICORN_WORKERS:-3} --timeout 60 --bind 0.0.0.0:5000 wsgi:app
+    healthcheck:
+      test: ["CMD-SHELL", "curl --silent --fail http://localhost:5000/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    volumes:
+      - ./public/uploads:/home/app/public/uploads
+    networks:
+      - backend
+      - frontend
+
+  nginx:
+    container_name: nginx
+    build: 
+      context: ./nginx
       dockerfile: Dockerfile
     ports:
-      - "${API_PORT:-80}:5000"
-    environment:
-      - FLASK_DEBUG=False
-      - DB_URI=postgresql://${POSTGRES_USER:-val}:${POSTGRES_PASSWORD:-PL4ES3CH4NG3M3}@db:5432/${POSTGRES_DB:-val}
-      - SECRET_KEY_APP=${SECRET_KEY_APP:-PL4ES3CH4NG3M3}
-      - SECRET_KEY_JWT=${SECRET_KEY_JWT:-PL4ES3CH4NG3M3}
-      - GENERATE_MIGRATIONS=false
-    depends_on:
-      db:
-        condition: service_healthy
-    networks:
-      - val-network
+      - '8888:80'
     restart: always
+    volumes:
+      - ./nginx/default.conf:/tmp/default.conf:ro
+      - ./public/uploads:/home/app/public/uploads:ro
+      - ./nginx/logs:/var/log/nginx
+    environment:
+      - FLASK_SERVER_ADDR=api:5000
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl --silent --fail localhost:80/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    networks:
+      - frontend
 
 networks:
-  val-network:
-    driver: bridge
+  frontend:
+  backend:
 
 volumes:
   postgres_data:

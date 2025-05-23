@@ -1,24 +1,36 @@
-FROM python:3.12-slim
+FROM python:3.12-alpine
 
-WORKDIR /api
+# upgrade pip
+RUN pip install --upgrade pip
 
-COPY requirements.txt .
-RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt
+# get curl for healthchecks
+RUN apk add curl
 
-COPY migrations migrations/
-COPY models.py extensions.py app.py wsgi.py ./
-COPY routes routes/
-COPY templates templates/
-COPY openapi.yml ./
+# permissions and nonroot user for tightened security
+RUN adduser -D nonroot
+RUN mkdir /home/app/ && chown -R nonroot:nonroot /home/app
+RUN mkdir -p /var/log/flask-app && touch /var/log/flask-app/flask-app.err.log && touch /var/log/flask-app/flask-app.out.log
+RUN chown -R nonroot:nonroot /var/log/flask-app
+WORKDIR /home/app
+USER nonroot
 
-COPY docker-entrypoint.sh ./
-RUN chmod +x docker-entrypoint.sh
+# copy all the files to the container
+COPY --chown=nonroot:nonroot . .
+RUN mv .env.local .env
 
-# Environment will be provided by docker-compose
-ENV PYTHONUNBUFFERED=1
+# venv
+ENV VIRTUAL_ENV=/home/app/venv
+
+# python setup
+RUN python -m venv $VIRTUAL_ENV
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+RUN export FLASK_APP=app.py
+RUN pip install -r requirements.txt
+
+# migrate database
+# RUN chmod +x docker-entrypoint.sh
 
 EXPOSE 5000
 
-ENTRYPOINT ["./docker-entrypoint.sh"]
-CMD ["gunicorn", "--workers=4", "--bind=0.0.0.0:5000", "--timeout=120", "wsgi:app"]
+# ENTRYPOINT ["/home/app/docker-entrypoint.sh"]
+CMD ["python", "app.py"]

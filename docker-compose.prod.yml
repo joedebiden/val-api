@@ -81,8 +81,9 @@ services:
       - frontend
 
 networks:
-  frontend:
   backend:
+  frontend:
+    external: true
 
 volumes:
   postgres_data:

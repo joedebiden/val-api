@@ -1,4 +1,4 @@
-name: valenstagram
+name: valenstagram-backend
 
 services:
   val-db:
@@ -21,14 +21,12 @@ services:
     networks:
       - backend
 
-  api:
-    container_name: api
-    build:
-      context: ./
-      dockerfile: Dockerfile
+  val-api:
+    container_name: val-api
+    image: evanhs/val-api:1.0
     restart: always
-    expose:
-      - 5000
+    ports:
+      - "5000:5000"
     environment:
       - SECRET_KEY=PL4ES3CH4NG3M3
       - SQLALCHEMY_DATABASE_URI=postgresql://val:val@val-db:5432/val
@@ -48,42 +46,12 @@ services:
       timeout: 10s
       retries: 3
       start_period: 10s
-    volumes:
-      - ./public/uploads:/home/app/public/uploads
     networks:
+      - frontend
       - backend
-      - frontend
-
-  nginx:
-    container_name: nginx
-    build: 
-      context: ./nginx
-      dockerfile: Dockerfile
-    ports:
-      - '8888:80'
-    restart: always
-    volumes:
-      - ./nginx/default.conf:/tmp/default.conf:ro
-      - ./public/uploads:/home/app/public/uploads:ro
-      - ./nginx/logs:/var/log/nginx
-    environment:
-      - FLASK_SERVER_ADDR=api:5000
-    depends_on:
-      api:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD-SHELL", "curl --silent --fail localhost:80/health || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-      start_period: 30s
-    networks:
-      - frontend
 
 networks:
   backend:
+    internal: true
   frontend:
     external: true
-
-volumes:
-  postgres_data:

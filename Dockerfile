@@ -18,6 +18,10 @@ USER nonroot
 COPY --chown=nonroot:nonroot . .
 RUN mv .env.local .env
 
+# docker-entrypoint.sh -> LF (linux encodage)
+RUN ls -la /home/app/docker-entrypoint.sh
+RUN cat /home/app/docker-entrypoint.sh
+
 # venv
 ENV VIRTUAL_ENV=/home/app/venv
 
@@ -27,10 +31,4 @@ ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 RUN export FLASK_APP=app.py
 RUN pip install -r requirements.txt
 
-# migrate database
-# RUN chmod +x docker-entrypoint.sh
-
 EXPOSE 5000
-
-# ENTRYPOINT ["/home/app/docker-entrypoint.sh"]
-CMD ["python", "app.py"]

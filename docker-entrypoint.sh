@@ -1,22 +1,15 @@
-#!/bin/bash
+#!/bin/sh
 
 echo "Waiting for database..."
 sleep 5
 
-if [ ! -d "/home/app/migrations/versions" ] || [ -z "$(ls -A /home/app/migrations/versions)" ]; then
-  echo "Initializing migrations..."
-  flask db init
-  flask db migrate -m "Initial migration"
-fi
+flask db init
 
 echo "Applying migrations..."
-flask db upgrade
+flask db migrate
 
-# Only generate new migrations if explicitly requested
-if [ "$GENERATE_MIGRATIONS" = "true" ]; then
-    flask db migrate -m "Auto-generated migration"
-    flask db upgrade
-fi
+echo "Applying upgrade..."
+flask db upgrade
 
 echo "Creating admin user"
 psql -h val-db -U val -d val -f /home/app/sql/init-admin.sql

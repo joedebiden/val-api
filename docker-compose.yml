@@ -1,14 +1,27 @@
+name: valenstagram-dev
 services:
-  db:
-    container_name: db
+  val-db-dev:
+    container_name: val-db-dev
     image: postgres:16.8-alpine
     volumes:
-      - ./.docker/postgres/data:/var/lib/postgresql/data
-      - ./docker/postgres/install-extensions.sql:/docker-entrypoint-initdb.d/install-extensions.sql
+      - ./.docker/postgres-localhost/data:/var/lib/postgresql/data
+      - ./docker/postgres-localhost/install-extensions.sql:/docker-entrypoint-initdb.d/install-extensions.sql
     ports:
       - '5432:5432'
     environment:
-      - POSTGRES_DB=val
-      - POSTGRES_USER=val
-      - POSTGRES_SCHEMA=val
-      - POSTGRES_PASSWORD=val
+      - POSTGRES_DB=val_local
+      - POSTGRES_USER=val_local
+      - POSTGRES_SCHEMA=val_local
+      - POSTGRES_PASSWORD=val_local
+
+# to setup the local environment (Windows):
+# ========================================
+# python -m venv .venv
+# .\venv\Scripts\activate
+# pip install -r requirements.txt
+# flask db init
+# flask db migrate
+# flask db uprade
+# flask run
+# ========================================
+# in dbeaver use the script : init-admin.sql to create an admin

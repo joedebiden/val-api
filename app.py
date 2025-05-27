@@ -1,4 +1,4 @@
-import os, dotenv, sys
+import os, dotenv, sys, json
 from urllib import request
 
 from flask import Flask, render_template, request, redirect, flash, url_for, jsonify
@@ -16,9 +16,12 @@ dotenv.load_dotenv()
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY_APP')
     basedir = os.path.abspath(os.path.dirname(__file__))
-    SQLALCHEMY_DATABASE_URI = os.environ.get('SQLALCHEMY_DATABASE_URI') or os.environ.get('DB_URI')
-    DEBUG = os.environ.get('FLASK_DEBUG')
-
+    
+    PROD = os.environ.get('FLASK_PROD') # if you change the mode in .env restart the app 
+    if PROD == 'true':
+        SQLALCHEMY_DATABASE_URI = os.environ.get('DB_URI')
+    else:
+        SQLALCHEMY_DATABASE_URI = os.environ.get('DB_URI_DEV')
 
 def create_app():
     app = Flask(__name__)

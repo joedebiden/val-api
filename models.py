@@ -1,9 +1,12 @@
-from datetime import datetime
+from datetime import datetime, timezone
 import uuid
 
 from flask_login import UserMixin
 
 from extensions import db
+
+def utc_now():
+    return datetime.now(timezone.utc)
 
 """ 
 Table User
@@ -18,7 +21,7 @@ class User(db.Model, UserMixin):
     website = db.Column(db.String(32), nullable=True)
     gender = db.Column(db.String(32), nullable=True)
     profile_picture = db.Column(db.String(255), nullable=True, default='default.jpg')
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utc_now)
     is_admin = db.Column(db.Boolean, default=False)
 
     posts = db.relationship('Post', backref='author', lazy=True)
@@ -31,7 +34,7 @@ class Post(db.Model):
     id = db.Column(db.UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     image_url = db.Column(db.String(255), nullable=False)
     caption = db.Column(db.Text, nullable=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utc_now)
     hidden_tag = db.Column(db.Boolean, default=False) # tag qui permet de définir si le post doit être caché ou non 
 
     user_id = db.Column(db.UUID(as_uuid=True), db.ForeignKey('utilisateur.id'), nullable=False)
@@ -47,7 +50,7 @@ class Like(db.Model):
     id = db.Column(db.UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id = db.Column(db.UUID(as_uuid=True), db.ForeignKey('utilisateur.id'), nullable=False)
     post_id = db.Column(db.UUID(as_uuid=True), db.ForeignKey('post.id'), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utc_now)
 
     __table_args__ = (db.UniqueConstraint(user_id, post_id, name='unique_like'),) # Un seul utilisateur unique par like de post
 
@@ -59,7 +62,7 @@ commentaires d'un post
 class Comment(db.Model):
     id = db.Column(db.UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     content = db.Column(db.Text, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utc_now)
 
     user_id = db.Column(db.UUID(as_uuid=True), db.ForeignKey('utilisateur.id'), nullable=False)
     post_id = db.Column(db.UUID(as_uuid=True), db.ForeignKey('post.id'), nullable=False)
@@ -73,7 +76,7 @@ class Follow(db.Model):
     id = db.Column(db.UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     follower_id = db.Column(db.UUID(as_uuid=True), db.ForeignKey('utilisateur.id'), nullable=False)
     followed_id = db.Column(db.UUID(as_uuid=True), db.ForeignKey('utilisateur.id'), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utc_now)
 
     __table_args__ = (db.UniqueConstraint(follower_id, followed_id, name='unique_follow'),) # Une seule relation entre deux utilisateurs
 
@@ -89,7 +92,7 @@ class Notification(db.Model):
     sender_id = db.Column(db.UUID(as_uuid=True), db.ForeignKey('utilisateur.id'), nullable=False)  # Qui a généré la notif
     post_id = db.Column(db.UUID(as_uuid=True), db.ForeignKey('post.id'), nullable=True)  # Optionnel (si lié à un post)
     type = db.Column(db.String(50), nullable=False)  # Ex: "like", "comment", "follow"
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utc_now)
 
 
 """
@@ -101,7 +104,7 @@ class Conversation(db.Model):
     id = db.Column(db.UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user1_id = db.Column(db.UUID(as_uuid=True), db.ForeignKey('utilisateur.id'), nullable=False)  # Premier utilisateur
     user2_id = db.Column(db.UUID(as_uuid=True), db.ForeignKey('utilisateur.id'), nullable=False)  # Deuxième utilisateur
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utc_now)
 
     messages = db.relationship('Message', backref='conversation', lazy=True)
 
@@ -117,5 +120,5 @@ class Message(db.Model):
     conversation_id = db.Column(db.UUID(as_uuid=True), db.ForeignKey('conversation.id'), nullable=False)
     sender_id = db.Column(db.UUID(as_uuid=True), db.ForeignKey('utilisateur.id'), nullable=False)
     content = db.Column(db.Text, nullable=False)  
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utc_now)
     is_read = db.Column(db.Boolean, default=False)

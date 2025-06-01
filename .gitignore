@@ -23,7 +23,7 @@ var/
 # Virtual Environment
 venv/
 ENV/
-.env
+environment/.env
 .venv
 env/
 

@@ -1,28 +1,24 @@
 import os, sys
 from urllib import request
-
+import dotenv
 from flask import Flask, render_template, request, redirect, flash, url_for, jsonify
 from flask_swagger_ui import get_swaggerui_blueprint
 from flask_login import LoginManager, login_user
 from werkzeug.security import check_password_hash
 
-
+dotenv.load_dotenv()
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 from extensions import db, mig, cors, login_manager
 
-if not os.environ.get('DOCKER_CONTAINER'):
-    try:
-        import dotenv
-        dotenv.load_dotenv()
-    except ImportError:
-        pass
+
 
 # classes de configuration
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY_APP')
     basedir = os.path.abspath(os.path.dirname(__file__))
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL')
-    print("SQLALCHEMY_DATABASE_URI:", SQLALCHEMY_DATABASE_URI)
+    # SQLALCHEMY_DATABASE_URI = os.environ.get('SQLALCHEMY_DATABASE_URI')
+    SQLALCHEMY_DATABASE_URI = 'postgresql://val:val@localhost:5432/val'
+    print('DB URI: '+SQLALCHEMY_DATABASE_URI)
 
 def create_app():
     app = Flask(__name__)
@@ -113,4 +109,4 @@ def create_app():
 app = create_app()
 
 if __name__ == '__main__':
-    app.run()
+    app.run(host='0.0.0.0', port='5000', debug=True)

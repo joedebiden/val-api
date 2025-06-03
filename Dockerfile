@@ -1,8 +1,5 @@
 FROM python:3.12-alpine
 
-LABEL maintainer="evanhugues@proton.me"
-LABEL version="1.0"
-
 WORKDIR /app
 
 RUN apk add --no-cache --virtual .build-deps \
@@ -16,18 +13,7 @@ RUN apk add --no-cache --virtual .build-deps \
     curl \
     && pip install --upgrade pip
     
-ARG ENV=production
-ARG FLASK_APP=app.py
-ARG SERVER_PORT=5000
-ARG SERVER_HOST=0.0.0.0
-ARG WORKERS=3
-
-ENV API_ENV=$ENV \
-    FLASK_APP=$FLASK_APP \
-    SERVER_PORT=${SERVER_PORT} \
-    SERVER_HOST=${SERVER_HOST} \
-    WORKERS=${WORKERS} \
-    PYTHONPATH=/app \
+ENV PYTHONPATH=/app \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1
 
@@ -51,7 +37,7 @@ RUN addgroup -g 1001 -S appgroup && \
 
 USER appuser
 
-EXPOSE ${SERVER_PORT}
+EXPOSE 5000
 
 # healthcheck peut etre overridé par le compose
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
@@ -59,4 +45,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
 
 # entrypoint -> init & migration de la db
 ENTRYPOINT ["./docker-entrypoint.sh"]
-CMD ["sh", "-c", "gunicorn --workers ${WORKERS} --timeout 60 --bind ${SERVER_HOST}:${SERVER_PORT} ${FLASK_APP%%.py}:app"]
+CMD ["sh", "-c", "gunicorn --workers 3 --timeout 60 --bind 0.0.0.0:5000 wsgi:app"]

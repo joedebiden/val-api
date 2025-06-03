@@ -16,8 +16,7 @@ from extensions import db, mig, cors, login_manager
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY_APP')
     basedir = os.path.abspath(os.path.dirname(__file__))
-    # SQLALCHEMY_DATABASE_URI = os.environ.get('SQLALCHEMY_DATABASE_URI')
-    SQLALCHEMY_DATABASE_URI = 'postgresql://val:val@localhost:5432/val'
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DB_URI')
     print('DB URI: '+SQLALCHEMY_DATABASE_URI)
 
 def create_app():
@@ -109,4 +108,4 @@ def create_app():
 app = create_app()
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port='5000', debug=True)
+    app.run()

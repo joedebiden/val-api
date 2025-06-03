@@ -5,6 +5,7 @@ pip install Flask-Migrate
 pip install flask-cors
 pip install python-dotenv
 pip install psycopg2-binary
-pip install jwt
+pip install PyJWT
 pip install Flask-Admin
 pip install gunicorn
+pip install Flask-WTF

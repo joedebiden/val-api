@@ -71,9 +71,7 @@ coverage.xml
 .pytest_cache/
 
 # API keys and secrets
-.env.development.local
-.env.test.local
-.env.production.local
+.env
 
 
 # Jupyter Notebook
@@ -89,7 +87,6 @@ sdist/
 wheels/
 *.egg-info/
 .docker/
-docker/
 migrations/
 
 # public photos

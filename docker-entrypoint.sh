@@ -1,5 +1,5 @@
 #!/bin/sh
-
+set -e 
 echo "⏳ Waiting for PostgreSQL to be ready..."
 while ! nc -z val-db 5432; do
   sleep 1
@@ -22,8 +22,8 @@ flask db upgrade
 
 echo "👤 Creating admin user..."
 
-export PGPASSWORD="${POSTGRES_PASSWORD:-val}"
-psql -h val-db -U "${POSTGRES_USER:-val}" -d "${POSTGRES_DB:-val}" -f /app/sql/init-admin.sql
+export PGPASSWORD="${POSTGRES_PASSWORD}"
+psql -h val-db -U "${POSTGRES_USER}" -d "${POSTGRES_DB}" -f /app/sql/init-admin.sql
 
 echo "🚀 Starting application..."
 exec "$@"

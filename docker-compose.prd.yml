@@ -9,20 +9,17 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./docker/postgres/install-extensions.sql:/docker-entrypoint-initdb.d/install-extensions.sql
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-val}
-      POSTGRES_USER: ${POSTGRES_USER:-val}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-val}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-val} -d ${POSTGRES_DB:-val}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 30s
     networks:
       - backend
-    ports:
-      # Exposer le port seulement en mode développement
-      - "${DB_PORT:-5432}:5432"
 
   val-api:
     container_name: val-api
@@ -30,29 +27,31 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        ENV: ${API_ENV:-production}
+        ENV: ${API_ENV}
     restart: unless-stopped
     ports:
-      - "${SERVER_PORT:-5000}:5000"
+      - "${SERVER_PORT}:5000"
     environment:
       # Configuration Flask
-      FLASK_APP: ${FLASK_APP:-wsgi.py}
-      FLASK_ENV: ${API_ENV:-production}
-      API_ENV: ${API_ENV:-production}
+      DOCKER_CONTAINER: "true"
+      FLASK_APP: ${FLASK_APP}
+      FLASK_ENV: ${API_ENV}
+      API_ENV: ${API_ENV}
       
       # Configuration base de données
-      DATABASE_URL: postgresql://${POSTGRES_USER:-val}:${POSTGRES_PASSWORD:-val}@val-db:5432/${POSTGRES_DB:-val}
-      POSTGRES_USER: ${POSTGRES_USER:-val}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-val}
-      POSTGRES_DB: ${POSTGRES_DB:-val}
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@val-db:5432/${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
       
       # Configuration sécurité
-      SECRET_KEY: ${SECRET_KEY_APP}
+      SECRET_KEY_APP: ${SECRET_KEY_APP}
       SECRET_KEY_JWT: ${SECRET_KEY_JWT}
       
       # Configuration serveur
-      SERVER_HOST: ${SERVER_HOST:-0.0.0.0}
-      SERVER_PORT: ${SERVER_PORT:-5000}
+      SERVER_HOST: ${SERVER_HOST}
+      SERVER_PORT: ${SERVER_PORT}
+      WORKERS: ${WORKERS}
       
       # Configuration Swagger
       SWAGGER_URL: ${SWAGGER_URL:-/api/docs}
@@ -60,6 +59,9 @@ services:
       
       # Mode production
       FLASK_PROD: ${FLASK_PROD:-true}
+
+      DB_URI: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@val-db:5432/${POSTGRES_DB}
+      DB_URI_DEV: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@val-db:5432/${POSTGRES_DB}
     volumes:
       - uploads_data:/app/public/uploads
       - ./logs:/app/logs

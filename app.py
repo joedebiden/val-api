@@ -1,4 +1,4 @@
-import os, dotenv, sys, json
+import os, sys
 from urllib import request
 
 from flask import Flask, render_template, request, redirect, flash, url_for, jsonify
@@ -10,18 +10,19 @@ from werkzeug.security import check_password_hash
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 from extensions import db, mig, cors, login_manager
 
-dotenv.load_dotenv()
+if not os.environ.get('DOCKER_CONTAINER'):
+    try:
+        import dotenv
+        dotenv.load_dotenv()
+    except ImportError:
+        pass
 
 # classes de configuration
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY_APP')
     basedir = os.path.abspath(os.path.dirname(__file__))
-    
-    PROD = os.environ.get('FLASK_PROD') # if you change the mode in .env restart the app 
-    if PROD == 'true':
-        SQLALCHEMY_DATABASE_URI = os.environ.get('DB_URI')
-    else:
-        SQLALCHEMY_DATABASE_URI = os.environ.get('DB_URI_DEV')
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL')
+    print("SQLALCHEMY_DATABASE_URI:", SQLALCHEMY_DATABASE_URI)
 
 def create_app():
     app = Flask(__name__)
@@ -102,22 +103,6 @@ def create_app():
                 status=200,
                 mimetype='application/json'
             )
-    
-    @app.route('/cache-me')
-    def cache():
-        return "nginx will cache this response"
-    
-    @app.route('/info')
-    def info():
-
-        resp = {
-            'connecting_ip': request.headers['X-Real-IP'],
-            'proxy_ip': request.headers['X-Forwarded-For'],
-            'host': request.headers['Host'],
-            'user-agent': request.headers['User-Agent']
-        }
-
-        return jsonify(resp)
 
     @app.route('/health')
     def flask_health_check():
@@ -127,5 +112,5 @@ def create_app():
 
 app = create_app()
 
-# if __name__ == '__main__':
-    # app.run()
+if __name__ == '__main__':
+    app.run()

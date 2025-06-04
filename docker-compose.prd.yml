@@ -23,9 +23,7 @@ services:
 
   val-api:
     container_name: val-api
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: evanhs/val-api:1.0
     restart: unless-stopped
     ports:
       - "5000:5000"

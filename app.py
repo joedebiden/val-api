@@ -49,8 +49,8 @@ def create_app():
     from routes.posts import post_bp
 
     # config of Swagger UI
-    swagger_url = os.environ.get('SWAGGER_URL')
-    api_url = os.environ.get('API_URL')
+    swagger_url = '/api/docs'
+    api_url = '/static/openapi.json'
 
 
     swaggerui_blueprint = get_swaggerui_blueprint(

@@ -9,11 +9,11 @@ RUN apk add --no-cache --virtual .build-deps \
     netcat-openbsd \
     postgresql-client \
     postgresql-dev \
-    wget \
     curl \
     && pip install --upgrade pip
     
 ENV PYTHONPATH=/app \
+    FLASK_APP=app.py \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1
 
@@ -40,8 +40,8 @@ USER appuser
 EXPOSE 5000
 
 # healthcheck peut etre overridé par le compose
-HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:5000/health || exit 1
+# HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    # CMD wget --no-verbose --tries=1 --spider http://localhost:5000/health || exit 1
 
 # entrypoint -> init & migration de la db
 ENTRYPOINT ["./docker-entrypoint.sh"]

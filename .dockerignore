@@ -39,6 +39,7 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+migrations/
 
 # Tests
 .pytest_cache/

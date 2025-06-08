@@ -5,6 +5,8 @@ from routes.auth import get_user_id_from_jwt
 from werkzeug.utils import secure_filename
 import os 
 import datetime 
+from PIL import Image
+import io
 
 user_bp = Blueprint('user_bp', __name__, url_prefix='/user')
 
@@ -117,21 +119,40 @@ def upload_profile_picture():
         file = request.files.get('file')
         
         if file and allowed_file(file.filename):
+            # test du filename avec werkzeug, création d'un suffix date, supp de l'ext, formatage de la date + jpg sur le fichier
             filename = secure_filename(file.filename)
             suffix = datetime.datetime.now().strftime("%d%m%Y-%H%M%S")
-            new_filename = "_".join([filename, suffix])
+            name_without_ext = os.path.splitext(filename)[0]
+            new_filename = f"{name_without_ext}_{suffix}.jpg"
             filepath = os.path.join(UPLOAD_FOLDER, new_filename)
 
             if not filepath.startswith(UPLOAD_FOLDER):  # prevent Directory traversal attack
                 return jsonify({'message': 'Invalid file path, please provide a good filename.' }), 400
             
-            file.save(filepath)
+            # file.save(filepath)
             try:
+                image = Image.open(file.stream)
+                # conversion image en rgb 
+                if image.mode in ('RGBA', 'LA', 'P'):
+                    background = Image.new('RGB', image.size, (255, 255, 255))
+                    if image.mode == 'P':
+                        image = image.convert('RGBA')
+                    background.paste(image, mask=image.split()[-1] if image.mode == 'RGBA' else None)
+                    image = background
+                elif image.mode != 'RGB':
+                    image = image.convert('RGB')
+                
+                # reduction de la taille et de la qualité     
+                target_size = (1920, 1080)
+                image.thumbnail(target_size, Image.Resampling.LANCZOS)
+                image.save(filepath, 'JPEG', quality=50, optimize=True)
+                
                 user.profile_picture = new_filename
                 db.session.commit()
-            except: 
+                
+            except Exception as e: 
                 db.session.rollback()
-                return jsonify({'message': 'An error occurred while updating profile picture'}), 500
+                return jsonify({'message': f'An error occurred while processing image: {str(e)}'}), 500
             
             return jsonify({
                 'message': 'File uploaded successfully',

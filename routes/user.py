@@ -4,6 +4,7 @@ from extensions import db
 from routes.auth import get_user_id_from_jwt
 from werkzeug.utils import secure_filename
 import os 
+import datetime 
 
 user_bp = Blueprint('user_bp', __name__, url_prefix='/user')
 
@@ -114,19 +115,19 @@ def upload_profile_picture():
             return jsonify({'message': 'The object File was not found' }), 404
         
         file = request.files.get('file')
-        if not file:
-            return jsonify({'message': 'File not selected' }), 404
         
         if file and allowed_file(file.filename):
             filename = secure_filename(file.filename)
-            filepath = os.path.join(UPLOAD_FOLDER, filename)
+            suffix = datetime.datetime.now().strftime("%d%m%Y-%H%M%S")
+            new_filename = "_".join([filename, suffix])
+            filepath = os.path.join(UPLOAD_FOLDER, new_filename)
 
             if not filepath.startswith(UPLOAD_FOLDER):  # prevent Directory traversal attack
                 return jsonify({'message': 'Invalid file path, please provide a good filename.' }), 400
             
             file.save(filepath)
             try:
-                user.profile_picture = filename
+                user.profile_picture = new_filename
                 db.session.commit()
             except: 
                 db.session.rollback()
@@ -134,7 +135,7 @@ def upload_profile_picture():
             
             return jsonify({
                 'message': 'File uploaded successfully',
-                'file_url': f'/user/profile-picture/{filename}'
+                'file_url': f'/user/profile-picture/{new_filename}'
             }), 200
         return jsonify({'message': 'Unsupported Media Type'}), 415
     return jsonify({'message': 'Method not allowed'}), 405

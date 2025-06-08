@@ -47,6 +47,7 @@ def create_app():
     from routes.user import user_bp
     from routes.follow import follow_bp
     from routes.posts import post_bp
+    from routes.likes import like_bp
 
     # config of Swagger UI
     swagger_url = '/api/docs'
@@ -66,6 +67,7 @@ def create_app():
     app.register_blueprint(user_bp)
     app.register_blueprint(follow_bp)
     app.register_blueprint(post_bp)
+    app.register_blueprint(like_bp)
 
     from admin import init_admin
     init_admin(app)

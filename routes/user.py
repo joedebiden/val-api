@@ -116,7 +116,7 @@ def upload_profile_picture():
         db.session.rollback()
         return jsonify({'message': f'An error occurred: {str(e)}'}), 500
 
-@user_bp.route('/profile-picture/<filename>', methods=['GET'])
+@user_bp.route('/picture/<filename>', methods=['GET'])
 def get_profile_picture(filename):
     return send_from_directory(UPLOAD_FOLDER, filename, as_attachment=False)
 

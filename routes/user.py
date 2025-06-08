@@ -1,22 +1,10 @@
 from flask import Blueprint, jsonify, request, send_from_directory
 from models import User
 from extensions import db
-from routes.auth import get_user_id_from_jwt
-from werkzeug.utils import secure_filename
-import os 
-import datetime 
-from PIL import Image
-import io
+from routes.auth import get_user_id_from_jwt, UPLOAD_FOLDER, allowed_file, upload_picture
 
 user_bp = Blueprint('user_bp', __name__, url_prefix='/user')
 
-UPLOAD_FOLDER = "public/uploads/"
-if not os.path.exists(UPLOAD_FOLDER):
-    os.makedirs(UPLOAD_FOLDER)
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
-def allowed_file(filename):
-    return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 @user_bp.route('/profile', methods=['GET'])
 def profile():
@@ -104,62 +92,29 @@ def edit_profile():
 
 @user_bp.route('/upload-profile-picture', methods=['POST'])
 def upload_profile_picture():
-    if request.method == 'POST':
-        user_id = get_user_id_from_jwt()
-        if not user_id:
-            return jsonify({'message' : 'Not authorized, please log in.'}), 401
+    user_id = get_user_id_from_jwt()
+    if not user_id:
+        return jsonify({'message' : 'Not authorized, please log in.'}), 401
         
-        user = User.query.filter_by(id=user_id).first()
-        if not user:
-            return jsonify({'message': 'User not found'}), 404
+    user = User.query.filter_by(id=user_id).first()
+    if not user:
+        return jsonify({'message': 'User not found'}), 404
 
-        if 'file' not in request.files:
-            return jsonify({'message': 'The object File was not found' }), 404
+    if 'file' not in request.files:
+        return jsonify({'message': 'The object File was not found' }), 404
+    try:
+        picture = upload_picture()
+        user.profile_picture = picture
+        db.session.commit()
         
-        file = request.files.get('file')
-        
-        if file and allowed_file(file.filename):
-            # test du filename avec werkzeug, création d'un suffix date, supp de l'ext, formatage de la date + jpg sur le fichier
-            filename = secure_filename(file.filename)
-            suffix = datetime.datetime.now().strftime("%d%m%Y-%H%M%S")
-            name_without_ext = os.path.splitext(filename)[0]
-            new_filename = f"{name_without_ext}_{suffix}.jpg"
-            filepath = os.path.join(UPLOAD_FOLDER, new_filename)
-
-            if not filepath.startswith(UPLOAD_FOLDER):  # prevent Directory traversal attack
-                return jsonify({'message': 'Invalid file path, please provide a good filename.' }), 400
-            
-            # file.save(filepath)
-            try:
-                image = Image.open(file.stream)
-                # conversion image en rgb 
-                if image.mode in ('RGBA', 'LA', 'P'):
-                    background = Image.new('RGB', image.size, (255, 255, 255))
-                    if image.mode == 'P':
-                        image = image.convert('RGBA')
-                    background.paste(image, mask=image.split()[-1] if image.mode == 'RGBA' else None)
-                    image = background
-                elif image.mode != 'RGB':
-                    image = image.convert('RGB')
-                
-                # reduction de la taille et de la qualité     
-                target_size = (1920, 1080)
-                image.thumbnail(target_size, Image.Resampling.LANCZOS)
-                image.save(filepath, 'JPEG', quality=50, optimize=True)
-                
-                user.profile_picture = new_filename
-                db.session.commit()
-                
-            except Exception as e: 
-                db.session.rollback()
-                return jsonify({'message': f'An error occurred while processing image: {str(e)}'}), 500
-            
-            return jsonify({
+        return jsonify({
                 'message': 'File uploaded successfully',
-                'file_url': f'/user/profile-picture/{new_filename}'
+                'file_url': f'/user/profile-picture/{picture}'
             }), 200
-        return jsonify({'message': 'Unsupported Media Type'}), 415
-    return jsonify({'message': 'Method not allowed'}), 405
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'message': f'An error occurred: {str(e)}'}), 500
 
 @user_bp.route('/profile-picture/<filename>', methods=['GET'])
 def get_profile_picture(filename):

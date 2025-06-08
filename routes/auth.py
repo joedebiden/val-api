@@ -1,11 +1,13 @@
 from flask import Blueprint, jsonify, request
 from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.utils import secure_filename
 from models import User
 from extensions import db
 import jwt 
 import datetime
 import dotenv
 import os
+from PIL import Image
 dotenv.load_dotenv()
 
 auth_bp = Blueprint('auth_bp', __name__, url_prefix='/auth')
@@ -88,4 +90,49 @@ def decode_jwt(token):
         return None
     except jwt.InvalidTokenError:
         return None
+    
+UPLOAD_FOLDER = "public/uploads/"
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+"""Methode qui upload une photo, taille réduite, qualité réduite, format jpg, nom sécurisé et retourne le nom de l'image"""
+def upload_picture():
+    if request.method == 'POST':
+        file = request.files.get('file')
+        if file and allowed_file(file.filename):
+            # test du filename avec werkzeug, création d'un suffix date, supp de l'ext, formatage de la date + jpg sur le fichier
+            filename = secure_filename(file.filename)
+            suffix = datetime.datetime.now().strftime("%d%m%Y-%H%M%S")
+            name_without_ext = os.path.splitext(filename)[0]
+            new_filename = f"{name_without_ext}_{suffix}.jpg"
+            filepath = os.path.join(UPLOAD_FOLDER, new_filename)
+
+            if not filepath.startswith(UPLOAD_FOLDER):  # prevent Directory traversal attack
+                return jsonify({'message': 'Invalid file path, please provide a good filename.' }), 400
+
+            try:
+                image = Image.open(file.stream)
+                # conversion image en rgb 
+                if image.mode in ('RGBA', 'LA', 'P'):
+                    background = Image.new('RGB', image.size, (255, 255, 255))
+                    if image.mode == 'P':
+                        image = image.convert('RGBA')
+                    background.paste(image, mask=image.split()[-1] if image.mode == 'RGBA' else None)
+                    image = background
+                elif image.mode != 'RGB':
+                    image = image.convert('RGB')
+                
+                # reduction de la taille et de la qualité     
+                target_size = (1920, 1080)
+                image.thumbnail(target_size, Image.Resampling.LANCZOS)
+                image.save(filepath, 'JPEG', quality=50, optimize=True)                
+                return new_filename
+
+            except Exception as e: 
+                return jsonify({'message': f'An error occurred while processing image: {str(e)}'}), 500
+        return jsonify({'message': 'Unsupported Media Type'}), 415
+    return jsonify({'message': 'Method not allowed'}), 405

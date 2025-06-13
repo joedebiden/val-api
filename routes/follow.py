@@ -154,23 +154,18 @@ def get_user_followed(username):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@follow_bp.route('/remove-follower', methods=['DELETE'])
-def remove_follower():
-    data = request.get_json()
-
-    username_other = data.get('username_other')
-    if not data or 'username_other' not in data:
-        return jsonify({'message': 'Missing username_other field'}), 404
+@follow_bp.route('/remove-follower/<username>', methods=['DELETE'])
+def remove_follower(username):
 
     user_id = get_user_id_from_jwt()
     if not user_id:
         return jsonify({'message': 'Unauthorized'}), 401
 
-    user_other = User.query.filter_by(username=username_other).first()
+    user_other = User.query.filter_by(username=username).first()
     if not user_other:
         return jsonify({'message': 'User not found'}), 404
 
-    user_id_other = str(user_other.id)
+    user_id_other = user_other.id
 
     follow_query = Follow.query.filter_by(follower_id=user_id_other, followed_id=user_id).first()
 
@@ -190,4 +185,4 @@ def remove_follower():
             db.session.rollback()
             return jsonify({'message': f'An error occurred: {str(e)}'}), 500
     else:
-        return jsonify({'message': 'Follow query not found'}), 404
+        return jsonify({'message': 'Aucune relation entre les deux utilisateurs'}), 404

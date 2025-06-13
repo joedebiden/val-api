@@ -44,7 +44,7 @@ def edit_profile():
     # protection contre l'abus directement vers l'api
     if len(new_username) > 20:
         return jsonify({"error": "Username too long (max 20 chars)"}), 400
-    if len(new_bio) > 50:
+    if len(new_bio) > 100:
         return jsonify({"error": "Bio too long (max 50 chars)"}), 400
     if len(new_website) > 32:
         return jsonify({"error": "Website URL too long (max 32 chars)"}), 400

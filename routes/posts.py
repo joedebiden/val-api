@@ -76,7 +76,9 @@ def global_feed():
     if not user_id:
         return jsonify({'message' : 'Not authorized'}), 401
 
-    posts = db.session.query(Post).order_by(Post.created_at.desc()).limit(10).all() 
+    # pagination à faire (recuperer tous les posts avec le hidden_tag en false, diviser par 20 (car 20 post par requete) 
+    # et a chaque requete active affiche les 20 premiers post puis les 20 prochains autres
+    posts = db.session.query(Post).order_by(Post.created_at.desc()).limit(100).all() 
     serialized_feed = [
         {
             'id': str(post.id),

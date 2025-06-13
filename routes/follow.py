@@ -38,7 +38,7 @@ def follow():
     user_id_other = str(user_other.id)
 
     if user_id == user_id_other:
-        return jsonify({'message': "You can't follow yourself"}), 401
+        return jsonify({'message': "You can't follow yourself"}), 402
 
     if Follow.query.filter_by(follower_id=user_id, followed_id=user_id_other).first():
         return jsonify({'message': 'Already following'}), 400

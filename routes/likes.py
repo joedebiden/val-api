@@ -7,13 +7,18 @@ like_bp = Blueprint('like', __name__, url_prefix='/like')
 
 @like_bp.route('/<post_id>', methods=['PUT'])
 def like_post(post_id):
-
     user_id = get_user_id_from_jwt()
     if not user_id:
         return jsonify({'message': 'Unauthorized'}), 401
     
-    if not Post.query.filter_by(id=post_id).first():
+    post = Post.query.filter_by(id=post_id).first()
+    if not post:
         return jsonify({'message': 'Post not found'}), 404
+    
+    # Check if the user already liked this post
+    existing_like = Like.query.filter_by(post_id=post_id, user_id=user_id).first()
+    if existing_like:
+        return jsonify({'message': 'You have already liked this post'}), 400
     
     try:
         new_like = Like(post_id=post_id, user_id=user_id)

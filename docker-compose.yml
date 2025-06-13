@@ -19,6 +19,7 @@ services:
 # python -m venv .venv
 # .\venv\Scripts\activate
 # pip install -r requirements.txt
+# copy and paste the exemple.env to .env
 # flask db init
 # flask db migrate
 # flask db uprade

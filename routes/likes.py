@@ -38,8 +38,8 @@ def like_post(post_id):
         return jsonify({'message': f'An error occurred: {str(e)}'}), 500
 
 
-@like_bp.route('/<post_id>/dislike', methods=['DELETE'])
-def dislike_post(post_id):
+@like_bp.route('/<post_id>/unlike', methods=['DELETE'])
+def unlike_post(post_id):
     
     user_id = get_user_id_from_jwt()
     if not user_id:
@@ -105,11 +105,23 @@ def get_post_likes(post_id):
 
     likes_count = db.session.query(db.func.count(Like.id)).filter(Like.post_id == post_id).scalar()
     
-    user_likes = db.session.query(Like.user_id).filter(Like.post_id == post_id).all()
-    user_ids = [str(user_id[0]) for user_id in user_likes]
+    users = (
+        db.session.query(User.id, User.username, User.profile_picture)
+        .join(Like, User.id == Like.user_id)
+        .filter(Like.post_id == post_id)
+        .all()
+    )
+    users_list = [
+        {
+            'id': str(user.id),
+            'username': user.username,
+            'profile_picture': user.profile_picture
+        }
+        for user in users
+    ]
 
     return jsonify({
         'post_id': str(post_id),
         'likes_count': likes_count,
-        'users': user_ids
+        'users': users_list # renvoyer une liste d'utilisateurs avec [{id, username, profile_picture}, ...]
     }), 200

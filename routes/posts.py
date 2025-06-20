@@ -1,12 +1,15 @@
 from flask import Blueprint, jsonify, request
 from extensions import db
-from models import User, Post, Follow
+from models import User, Post, Follow, Comment, Like
 from routes.auth import get_user_id_from_jwt, upload_picture
 from sqlalchemy.sql import exists
 import uuid
 
 post_bp = Blueprint('post_bp', __name__, url_prefix='/post')
 
+"""
+Upload a post with picture and description
+"""
 @post_bp.route('/upload', methods=['POST'])
 def upload_post():
     caption = request.form.get("caption")
@@ -41,21 +44,34 @@ def upload_post():
         }
     }), 200
 
-@post_bp.route('/<id_post>', methods=['GET'])
-def show_post(id_post):
-    if not id_post:
+"""
+Return all the post info with post_id in param
+"""
+@post_bp.route('/<post_id>', methods=['GET'])
+def show_post(post_id):
+    if not post_id:
         return jsonify({'message': 'Missing the post id'}), 400
-
     try: 
-        uuid_obj = uuid.UUID(id_post)
+        uuid_obj = uuid.UUID(post_id)
     except ValueError:
         return jsonify({'message': 'Invalid post ID format please insert only UUID format'}), 400
 
-    post = db.session.query(Post).filter_by(id=id_post).first()
+    post = db.session.query(Post).filter_by(id=post_id).first()
     if not post:
         return jsonify({'message': "The post was not found"}), 404
     user = User.query.get(post.user_id)
+    
+    likes_count = db.session.query(db.func.count(Like.id)).filter(Like.post_id == post_id).scalar()
+    comments_count = db.session.query(db.func.count(Comment.id)).filter(Comment.post_id == post_id).scalar()
 
+    likes_list = [
+        {'like_id': str(like.id)}
+        for like in Like.query.filter_by(post_id=post_id).all()
+    ]
+    comment_list = [
+        {'comment_id': str(comment.id)}
+        for comment in Comment.query.filter_by(post_id=post_id).all()
+    ]
     return jsonify({
         'message': 'Post found',
         'post': {
@@ -65,20 +81,32 @@ def show_post(id_post):
             'username': user.username,
             'user_profile_url': user.profile_picture,
             'created_at': str(post.created_at),
-            'hidden_tag': post.hidden_tag
+            'hidden_tag': post.hidden_tag,
+            'likes' : {
+                'likes_count': likes_count,
+                'likes_list': likes_list
+            },
+            'comments': {
+                'comments_count': comments_count,
+                'comments': comment_list
+            }
         }
     }), 200
 
-@post_bp.route('/feed/global', methods=['GET'])
+"""
+Feed post management. As a reminder, the feed is the page that gathers
+all recent posts, so it's just a huge fetch of the all most recent
+posts, and on the frontend if the person scrolls to the eighth one, it triggers another request
+"""
+@post_bp.route('/feed/global', methods=['GET']) # TODO: Pagination fetch
 def global_feed():
-    """gestion des posts du feed pour rappel le feed est la page qui rassemble tous les récents posts donc c'est juste un énorme fetch des 10 derniers posts et coté front si la personne scroll au bout du huitieme ça relance un requete"""
     user_id = get_user_id_from_jwt()
     if not user_id:
         return jsonify({'message' : 'Not authorized'}), 401
 
     # pagination à faire (recuperer tous les posts avec le hidden_tag en false, diviser par 20 (car 20 post par requete) 
     # et a chaque requete active affiche les 20 premiers post puis les 20 prochains autres
-    posts = db.session.query(Post).order_by(Post.created_at.desc()).limit(100).all() 
+    posts = db.session.query(Post).filter_by(hidden_tag=False).order_by(Post.created_at.desc()).all()
     serialized_feed = [
         {
             'id': str(post.id),
@@ -96,13 +124,15 @@ def global_feed():
         'content': serialized_feed
     }), 200
 
+"""
+Delete a post
+"""
 @post_bp.route('/delete/<post_id>', methods=['DELETE'])
 def delete_post(post_id):
     user_id = get_user_id_from_jwt()
     if not user_id:
         return jsonify({'message' : 'Not authorized, please log in.'}), 401
 
-    # bug relou: le parametre dans la requete n'est pas un str mais un uuid et donc les caractere comme q, z ne sont pas pris en charge et donc font crash la requete
     try: 
         uuid_obj = uuid.UUID(post_id)
     except ValueError:
@@ -126,6 +156,9 @@ def delete_post(post_id):
             'message': f'An error occurred while deleting the post: {str(e)}'
             }), 500
 
+"""
+Edit a post : caption and tag
+"""
 @post_bp.route('/edit/<post_id>', methods=['POST'])
 def edit_post(post_id):
     user_id = get_user_id_from_jwt()
@@ -174,9 +207,13 @@ def edit_post(post_id):
         db.session.rollback()
         return jsonify({'message': f'An error occurred: {str(e)}'}), 500
 
+"""
+Retrieve posts from a specific user (e.g., user profile). 
+Get all posts including hidden ones if it's the concerned 
+user (token jwt = user_id), otherwise only display the user's public posts.
+"""
 @post_bp.route('/feed/<user>', methods=['GET'])
 def get_user_post(user):
-    """Récupérer les posts d'un utilisateur spécifique (ex: profil utilisateur) récupérer tous les posts meme ceux cachés si c'est l'utilisateur concerné (token jwt = user_id) sinon simplement afficher les posts publics de la personne"""
     if not user:
         return jsonify({'message' : 'User not request'}), 401
     target_user = User.query.filter_by(username=user).first().id
@@ -217,6 +254,10 @@ def get_user_post(user):
         'post': serialized_posts
     })
 
+"""
+Feed of the home page, fetch all content of the followed users of the current user
+and do not display the content that are hidden
+"""
 @post_bp.route('/feed', methods=['GET'])
 def feed_perso():
     user_id = get_user_id_from_jwt()
@@ -243,5 +284,5 @@ def feed_perso():
 
 def get_followed_posts(user_id):
         followed_users = db.session.query(Follow.followed_id).filter(Follow.follower_id == user_id).subquery()
-        followed_posts = db.session.query(Post).filter(Post.user_id.in_(followed_users)).order_by(Post.created_at.desc()).all()
+        followed_posts = db.session.query(Post).filter(Post.user_id.in_(followed_users)).filter_by(hidden_tag=False).order_by(Post.created_at.desc()).all()
         return followed_posts

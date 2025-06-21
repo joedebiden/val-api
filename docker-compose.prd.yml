@@ -23,7 +23,7 @@ services:
 
   val-api:
     container_name: val-api
-    image: evanhs/val-api:1.0
+    image: evanhs/val-api:latest
     restart: unless-stopped
     ports:
       - "5000:5000"

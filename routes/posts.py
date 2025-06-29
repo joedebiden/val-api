@@ -220,7 +220,7 @@ def get_user_post(user):
     current_user = get_user_id_from_jwt()
     if current_user == str(target_user):
         # show all posts even hidden
-        posts = db.session.query(Post).filter(Post.user_id == target_user)
+        posts = db.session.query(Post).filter(Post.user_id == target_user).order_by(Post.created_at.desc())
         serialized_posts = [
             {
                 'id': post.id,
@@ -237,7 +237,7 @@ def get_user_post(user):
             'post': serialized_posts
         })
     # else show public post
-    posts = db.session.query(Post).filter(Post.user_id == target_user).filter(Post.hidden_tag == False)
+    posts = db.session.query(Post).filter(Post.user_id == target_user).filter(Post.hidden_tag == False).order_by(Post.created_at.desc())
     serialized_posts = [
         {
             'id': post.id,

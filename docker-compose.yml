@@ -13,6 +13,12 @@ services:
       - POSTGRES_USER=val_local
       - POSTGRES_SCHEMA=val_local
       - POSTGRES_PASSWORD=val_local
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U val_local -d val_local" ]
+      interval: 5s
+      timeout: 10s
+      retries: 5
+      start_period: 10s
 
 # to setup the local environment (Windows):
 # ========================================
@@ -20,9 +26,5 @@ services:
 # .\venv\Scripts\activate
 # pip install -r requirements.txt
 # copy and paste the exemple.env to .env
-# flask db init
-# flask db migrate
-# flask db uprade
-# flask run
 # ========================================
 # in dbeaver use the script : init-admin.sql to create an admin

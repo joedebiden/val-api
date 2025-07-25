@@ -1,93 +1,43 @@
 # Python
 __pycache__/
 *.py[cod]
-*$py.class
-*.so
-.Python
+*.pyo
+*.pyd
+*.env
+*.venv
 env/
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-*.egg-info/
-.installed.cfg
-*.egg
-
-# Virtual Environment
 venv/
 ENV/
-environment/.env
-.venv
-env/
+env.bak/
+venv.bak/
 
-# Flask
-instance/
-.webassets-cache
-flask_session/
-
-# Database
-*.db
-*.sqlite3
-*.sqlite
-
-# Logs
-logs/
-*.log
-
-# OS specific files
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-
-# Editor directories and files
+# IDE
 .idea/
 .vscode/
-*.swp
-*.swo
-*~
 
-# Unit test / coverage reports
+# Systèmes d'exploitation
+.DS_Store
+Thumbs.db
+
+# Fichiers de logs
+*.log
+*.logs
+
+# Base de données SQLite
+*.sqlite3
+*.db
+
+# Tests
 htmlcov/
-.tox/
-.nox/
 .coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-.hypothesis/
+.tox/
 .pytest_cache/
 
-# API keys and secrets
-.env
+# Autres
+*.bak
+*.swp
 
 
-# Jupyter Notebook
-.ipynb_checkpoints
+# Docker
+.docker
 
-# Distribution / packaging
-.Python
-dist/
-downloads/
-eggs/
-.eggs/
-sdist/
-wheels/
-*.egg-info/
-.docker/
-migrations/
-
-# public photos
-public/uploads/

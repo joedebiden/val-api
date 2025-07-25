@@ -1,0 +1,16 @@
+python.exe -m pip install --upgrade pip
+pip install fastapi
+pip install "fastapi[standard]"
+pip install uvicorn
+pip install python-dotenv
+pip install sqlalchemy
+pip install alembic
+pip install PyJWT
+pip install Pillow
+pip install pydantic[email]
+pip install python-multipart
+pip install passlib[argon2]
+pip install pytest
+pip install httpx
+pip install pydantic_settings
+pip install psycopg2

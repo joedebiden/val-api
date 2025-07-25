@@ -1,0 +1,25 @@
+name: valenstagram-test
+services:
+  val-db-test:
+    container_name: val-db-test
+    image: postgres:16.8-alpine
+    volumes:
+      - ./.docker/postgres-localhost-test/data:/var/lib/postgresql/data
+      - ./docker/postgres-localhost-test/install-extensions.sql:/docker-entrypoint-initdb.d/install-extensions.sql
+    ports:
+      - '5433:5432'
+    environment:
+      - POSTGRES_DB=val_test
+      - POSTGRES_USER=val_test
+      - POSTGRES_SCHEMA=val_test
+      - POSTGRES_PASSWORD=val_test
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U val_test -d val_test" ]
+      interval: 5s
+      timeout: 10s
+      retries: 5
+      start_period: 10s
+
+# ========================================
+#       Db pgsql for the test only
+# ========================================

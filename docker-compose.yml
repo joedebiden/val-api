@@ -1,4 +1,3 @@
-name: valenstagram-dev
 services:
   val-db-dev:
     container_name: val-db-dev
@@ -9,22 +8,12 @@ services:
     ports:
       - '5432:5432'
     environment:
-      - POSTGRES_DB=val_local
-      - POSTGRES_USER=val_local
-      - POSTGRES_SCHEMA=val_local
-      - POSTGRES_PASSWORD=val_local
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U val_local -d val_local" ]
       interval: 5s
       timeout: 10s
       retries: 5
       start_period: 10s
-
-# to setup the local environment (Windows):
-# ========================================
-# python -m venv .venv
-# .\venv\Scripts\activate
-# pip install -r requirements.txt
-# copy and paste the exemple.env to .env
-# ========================================
-# in dbeaver use the script : init-admin.sql to create an admin

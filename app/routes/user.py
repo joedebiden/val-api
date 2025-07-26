@@ -79,7 +79,9 @@ async def upload_profile_picture(
 
 @router.get("/picture/{filename}")
 def get_profile_picture(filename: str):
-    path = os.path.join(UPLOAD_FOLDER, filename)
+    path = os.path.normpath(os.path.join(UPLOAD_FOLDER, filename))
+    if not path.startswith(UPLOAD_FOLDER):
+        raise HTTPException(400, detail=f"Invalid filename: {filename}")
     if not os.path.exists(path):
         raise HTTPException(404, detail="File not found")
     return FileResponse(path)

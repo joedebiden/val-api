@@ -1,4 +1,4 @@
-name: valenstagram-backend
+name: val-backend-prod
 
 services:
   val-db:
@@ -8,10 +8,9 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     environment:
-      - POSTGRES_DB=val
-      - POSTGRES_USER=val
-      - POSTGRES_SCHEMA=val
-      - POSTGRES_PASSWORD=val
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -h localhost -U val -d val"]
       interval: 20s
@@ -23,18 +22,15 @@ services:
 
   val-api:
     container_name: val-api
-    image: evanhs/val-api:1.0
+    build:
+      dockerfile: Dockerfile
     restart: unless-stopped
     ports:
       - "5000:5000"
     environment:
-
-      # Configuration base de données
-      DB_URI: postgresql://val:val@val-db:5432/val
-      
-      # Configuration sécurité
-      SECRET_KEY_APP: 'supermegasecretcode'
-      SECRET_KEY_JWT: 'supermegasecretcodejwt'
+      DATABASE_URL: ${DATABASE_URL}
+      DATABASE_URL_TEST: ${DATABASE_URL_TEST}
+      SECRET_KEY: ${SECRET_KEY}
     volumes:
       - uploads_data:/app/public/uploads
       - ./logs:/app/logs
@@ -53,9 +49,7 @@ services:
 
 volumes:
   postgres_data:
-    driver: local
   uploads_data:
-    driver: local
 
 networks:
   backend:

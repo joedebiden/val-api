@@ -4,7 +4,6 @@ services:
     image: postgres:16.8-alpine
     volumes:
       - ./.docker/postgres-localhost/data:/var/lib/postgresql/data
-      - ./docker/postgres-localhost/install-extensions.sql:/docker-entrypoint-initdb.d/install-extensions.sql
     ports:
       - '5432:5432'
     environment:
@@ -12,7 +11,7 @@ services:
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U val_local -d val_local" ]
+      test: ["CMD-SHELL", "pg_isready -h localhost -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 5s
       timeout: 10s
       retries: 5

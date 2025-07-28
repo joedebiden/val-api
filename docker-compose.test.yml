@@ -5,7 +5,6 @@ services:
     image: postgres:16.8-alpine
     volumes:
       - ./.docker/postgres-localhost-test/data:/var/lib/postgresql/data
-      - ./docker/postgres-localhost-test/install-extensions.sql:/docker-entrypoint-initdb.d/install-extensions.sql
     ports:
       - '5433:5432'
     environment:

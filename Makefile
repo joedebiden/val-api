@@ -31,22 +31,22 @@ docker-stop:
 	docker compose down
 
 docker-build-version:
-	docker build -t val-api:1.X -f Dockerfile .
+	docker build -t val-api:2.0.X -f Dockerfile .
 
 docker-build-latest:
 	docker build -t val-api:latest -f Dockerfile .
 
 docker-tag-version:
-	docker tag val-api:1.X evanhs/val-api:1.X
+	docker tag val-api:2.0.X evanhs/val-api:2.0.X
 
 docker-tag-latest:
-	docker tag val-api:1.X evanhs/val-api:1.X
+	docker tag val-api:latest evanhs/val-api:latest
 
 docker-push-version:
 	docker push evanhs/val-api:1.X
 
 docker-push-latest:
-	docker push evanhs/val-api:1.X
+	docker push evanhs/val-api:latest
 
 pytest-auth:
 	pytest .\app\tests\auth.py

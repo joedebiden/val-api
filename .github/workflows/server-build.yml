@@ -22,5 +22,6 @@ jobs:
           key: ${{ secrets.SERVER_SSH_KEY }}
           script: |
             cd /home/joker/val-api
+            git pull
             docker pull evanhs/val-api:master
             docker compose -f 'docker-compose.prd.yml' up -d --build

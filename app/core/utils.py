@@ -63,43 +63,10 @@ def upload_picture_util(file: UploadFile) -> str:
 
     return filename
 
-"""
-Nouvelle méthode à analyser..
-async def upload_picture(file: UploadFile = File(...)):
-    if not file.filename or '.' not in file.filename:
-        raise HTTPException(status_code=400, detail="Invalid file")
-
-    ext = file.filename.rsplit('.', 1)[1].lower()
-    if ext not in ALLOWED_EXTENSIONS:
-        raise HTTPException(status_code=415, detail="Unsupported file type")
-
-    filename = secure_filename(file.filename)
-    suffix = datetime.datetime.now().strftime("%d%m%Y-%H%M%S")
-    name_without_ext = os.path.splitext(filename)[0]
-    new_filename = f"{name_without_ext}_{suffix}.jpg"
-    filepath = os.path.join(UPLOAD_FOLDER, new_filename)
-
-    if not filepath.startswith(UPLOAD_FOLDER):
-        raise HTTPException(status_code=400, detail="Invalid file path")
-
+"""Récupère la version de l'app dans le version.txt (pushed par le workflows)"""
+def get_version():
     try:
-        contents = await file.read()
-        image = Image.open(BytesIO(contents))
-
-        if image.mode in ('RGBA', 'LA', 'P'):
-            background = Image.new('RGB', image.size, (255, 255, 255))
-            if image.mode == 'P':
-                image = image.convert('RGBA')
-            background.paste(image, mask=image.split()[-1] if image.mode == 'RGBA' else None)
-            image = background
-        elif image.mode != 'RGB':
-            image = image.convert('RGB')
-
-        target_size = (1920, 1080)
-        image.thumbnail(target_size, Image.Resampling.LANCZOS)
-        image.save(filepath, 'JPEG', quality=50, optimize=True)
-
-        return {"filename": new_filename}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error while processing image: {str(e)}")
-"""
+        with open("version.txt") as f:
+            return f.read().strip()
+    except FileNotFoundError:
+        return "unknown"

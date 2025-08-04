@@ -1,10 +1,10 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.core.utils import get_version
 from app.routes import auth, user, follow, post, like
 from app.core.database import engine
 from app.models.models import Base
-from app.core.config import Settings
 
 # create DB
 Base.metadata.create_all(bind=engine)
@@ -37,4 +37,6 @@ def read_root():
 def health_check():
     return {"status": "ok"}
 
-
+@app.get("/version")
+def version():
+    return {"version": get_version()}

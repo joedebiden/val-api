@@ -34,11 +34,11 @@ jobs:
       id-token: write
 
     steps:
-      - name: Version the app with git tag
-        run: git describe --tags --abbrev=0 > version.txt
-
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Version the app with git tag
+        run: git describe --tags --abbrev=0 > version.txt
 
       # Install the cosign tool except on PR
       # https://github.com/sigstore/cosign-installer

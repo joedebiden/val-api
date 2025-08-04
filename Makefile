@@ -43,7 +43,7 @@ docker-tag-latest:
 	docker tag val-api:latest evanhs/val-api:latest
 
 docker-push-version:
-	docker push evanhs/val-api:1.X
+	docker push evanhs/val-api:2.0.X
 
 docker-push-latest:
 	docker push evanhs/val-api:latest

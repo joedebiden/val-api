@@ -23,5 +23,5 @@ jobs:
           script: |
             cd /home/joker/val-api
             git pull
-            docker pull evanhs/val-api:master
+            docker pull evanhs/val-api:latest
             docker compose -f 'docker-compose.prd.yml' up -d --build

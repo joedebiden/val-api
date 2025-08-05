@@ -4,6 +4,9 @@ WORKDIR /code
 
 COPY ./requirements.txt /code/requirements.txt
 
+# copy and setup of the version before building image w/ github action
+COPY ./version.txt /code/version.txt
+
 RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
 
 COPY ./app /code/app

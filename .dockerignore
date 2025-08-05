@@ -72,6 +72,10 @@ Thumbs.db
 README.md
 *.md
 docs/
+*.png
+*.jpg
+*.gif
+!default.jpg
 
 # Fichiers temporaires
 tmp/

@@ -27,10 +27,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-        # merge into master -> create tag -> push tag -> run actions
-      - name: Version the app with git tag
-        run: git describe --tags --abbrev=0 --always > version.txt
-
       - name: Install cosign
         if: github.event_name != 'pull_request'
         uses: sigstore/cosign-installer@59acb6260d9c0ba8f4a2f9d9b48431a222b68e20 #v3.5.0

@@ -27,8 +27,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+        # merge into master -> create tag -> push tag -> run actions
       - name: Version the app with git tag
-        run: git describe --tags --abbrev=0 > version.txt
+        run: git describe --tags --abbrev=0 --always > version.txt
 
       - name: Install cosign
         if: github.event_name != 'pull_request'

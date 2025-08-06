@@ -59,7 +59,7 @@ def post_data():
 
 @pytest.fixture
 def created_post(client: TestClient, auth_headers: dict, post_data: dict):
-    response = client.post("/posts/create", json=post_data, headers=auth_headers)
+    response = client.post("/post/upload", json=post_data, headers=auth_headers)
     assert response.status_code == 200
     return response.json()
 

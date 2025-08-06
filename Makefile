@@ -13,7 +13,7 @@ tag-latest: docker-tag-latest
 push-version: docker-push-version
 push-latest: docker-push-latest
 # start the pytest
-pytest-all: pytest-auth pytest-user pytest-post pytest-follow
+pytest-all: pytest-auth pytest-user pytest-post pytest-follow pytest-comment
 # alembic python database
 alembic-init: python-alembic-init
 alembic-first: python-alembic-first-migration
@@ -64,6 +64,9 @@ pytest-post:
 
 pytest-follow:
 	pytest .\app\tests\follow.py
+
+pytest-comment:
+	pytest .\app\tests\comment.py
 
 python-alembic-init:
 	alembic init --template pyproject alembic

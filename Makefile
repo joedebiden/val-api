@@ -14,6 +14,11 @@ push-version: docker-push-version
 push-latest: docker-push-latest
 # start the pytest
 pytest-all: pytest-auth pytest-user pytest-post pytest-follow
+# alembic python database
+alembic-init: python-alembic-init
+alembic-first: python-alembic-first-migration
+alembic-next: python-alembic-second-migration
+alembic-downgrade: python-alembic-downgrading
 
 docker-build-dev:
 	docker compose -f 'docker-compose.yml' up -d --build
@@ -59,3 +64,15 @@ pytest-post:
 
 pytest-follow:
 	pytest .\app\tests\follow.py
+
+python-alembic-init:
+	alembic init --template pyproject alembic
+
+python-alembic-first-migration:
+	alembic upgrade head
+
+python-alembic-second-migration:
+	alembic revision -m "Add a column"
+
+python-alembic-downgrading:
+	alembic downgrade base

@@ -52,7 +52,7 @@ class Comment(Base):
     __tablename__ = 'comment'
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    content = Column(Text, nullable=False)
+    content = Column(String(1000), nullable=False)
     created_at = Column(DateTime, default=utc_now)
 
     user_id = Column(UUID(as_uuid=True), ForeignKey('utilisateur.id'), nullable=False)

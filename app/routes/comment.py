@@ -22,7 +22,7 @@ def comment(
         raise HTTPException(status_code=404, detail="Post not found")
     if not user_id:
         raise HTTPException(status_code=401, detail="Not authorized")
-    if len(payload.content) > 1000:
+    if len(payload.content) > 500:
         raise HTTPException(status_code=400, detail="Comment too long")
 
     new_comment = Comment(content=payload.content, post_id=post.id, user_id=user_id)

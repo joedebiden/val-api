@@ -2,14 +2,13 @@ from datetime import datetime
 from typing import List
 
 from pydantic import BaseModel
-from uuid import UUID
 
 class CommentResponse(BaseModel):
-    id: UUID
+    id: int
     content: str
     created_at: datetime
-    user_id: UUID
-    post_id: UUID
+    user_id: int
+    post_id: int
 
 class CommentContent(BaseModel):
     content: str

@@ -1,5 +1,3 @@
-from uuid import UUID
-
 from pydantic import BaseModel, EmailStr, constr
 from typing import Optional, List
 from datetime import datetime
@@ -13,7 +11,7 @@ class UserEditRequest(BaseModel):
     gender: Optional[constr(max_length=32)]
 
 class UserResponse(BaseModel):
-    id: UUID
+    id: int
     username: str
     email: EmailStr
     bio: Optional[str]
@@ -27,7 +25,7 @@ class UserResponse(BaseModel):
 
 class UserSearchItem(BaseModel):
     username: str
-    profile_picture: Optional[str]
+    profile_picture: str
 
 class UserSearchResponse(BaseModel):
     message: str

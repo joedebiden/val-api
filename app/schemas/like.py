@@ -1,30 +1,28 @@
 from pydantic import BaseModel
 from datetime import datetime
 
-from uuid import UUID
-
 
 class LikeResponse(BaseModel):
-    like_id: UUID
-    post_id: UUID
-    user_id: UUID
+    like_id: int
+    post_id: int
+    user_id: int
     created_at: datetime
 
 class LikeRemovedResponse(BaseModel):
-    like_id_removed: UUID
-    post_id_attached: UUID
-    user_id_from_like: UUID
+    like_id_removed: int
+    post_id_attached: int
+    user_id_from_like: int
 
 class LikedPost(BaseModel):
-    post_id: UUID
+    post_id: int
     liked_at: datetime
 
 class UserLikeInfo(BaseModel):
-    id: UUID
+    id: int
     username: str
     profile_picture: str | None = None
 
 class PostLikesResponse(BaseModel):
-    post_id: UUID
+    post_id: int
     likes_count: int
     users: list[UserLikeInfo]

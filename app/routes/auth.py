@@ -38,13 +38,13 @@ def login(data: LoginRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter_by(username=data.username).first()
     if user and argon2.verify(data.password, user.password_hash):
         token = jwt.encode({
-            "id": str(user.id),
+            "id": user.id,
             "exp": datetime.datetime.now(datetime.UTC) + datetime.timedelta(days=1)
         }, settings.SECRET_KEY, algorithm="HS256")
 
         return {
             "token": token,
-            "user_id": str(user.id),
+            "user_id": user.id,
             "username": data.username,
             "profile_picture": user.profile_picture
         }

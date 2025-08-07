@@ -28,7 +28,7 @@ class Post(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     image_url = Column(String(255), nullable=False)
-    caption = Column(String(200), nullable=True)
+    caption = Column(String(500), nullable=True)
     created_at = Column(DateTime, default=utc_now)
     hidden_tag = Column(Boolean, default=False)
 

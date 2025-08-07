@@ -1,13 +1,9 @@
-from typing import Optional
 import jwt
-from fastapi import UploadFile, Request, Depends, HTTPException
+from fastapi import UploadFile, Request, HTTPException
 from PIL import Image
 import os
 from datetime import datetime
 from uuid import uuid4
-
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from starlette import status
 
 from app.core.config import settings
 
@@ -18,30 +14,31 @@ ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
 
-"""Retourne les valeurs décodées du token JWT"""
+
 def decode_jwt(token: str):
+    """Returns the decoded values of the JWT token"""
     try:
         return jwt.decode(token, settings.SECRET_KEY, algorithms=['HS256'])
     except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
         return None
 
-"""Retourne un user id pour un token JWT en paramètre"""
-def get_user_id_from_jwt(request: Request) -> Optional[int]:
+
+def jwt_user_id(request: Request) -> int:
+    """Decorator returning a user ID for a JWT token as a parameter"""
     auth_header = request.headers.get('Authorization')
     if not auth_header or " " not in auth_header:
-        return None
+        raise HTTPException(status_code=401, detail="Not authorized")
     token = auth_header.split()[1]
     data = decode_jwt(token)
-    if not data:
-        return None
     return data['id']
 
 
 def allowed_file(filename: str) -> bool:
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-"""Methode générique qui upload une photo, taille réduite, qualité réduite, format jpg, nom sécurisé et retourne le nom de l'image"""
+
 def upload_picture_util(file: UploadFile) -> str:
+    """Generic method that uploads a photo, reduced size, reduced quality, jpg format, secure name, and returns the name of the image."""
     if not allowed_file(file.filename):
         raise ValueError("Unsupported file type")
 
@@ -63,8 +60,9 @@ def upload_picture_util(file: UploadFile) -> str:
 
     return filename
 
-"""Récupère la version de l'app dans le version.txt (pushed par le workflows)"""
+
 def get_version():
+    """Retrieves the app version from version.txt (written by hands)"""
     try:
         with open("version.txt") as f:
             return f.read().strip()

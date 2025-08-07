@@ -1,13 +1,12 @@
 from pydantic import BaseModel
 from typing import Optional, List
-from uuid import UUID
 from datetime import datetime
 
 class PostResponse(BaseModel):
-    id: UUID
+    id: int
     image_url: str
     caption: Optional[str]
-    user_id: UUID
+    user_id: int
     username: str
     user_profile: Optional[str]
     created_at: datetime

@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, UploadFile, File, HTTPException
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
-from app.core.utils import get_user_id_from_jwt, upload_picture_util, UPLOAD_FOLDER
+from app.core.utils import jwt_user_id, upload_picture_util, UPLOAD_FOLDER
 from app.models.models import User
 from app.core.database import get_db
 from app.schemas.user import UserEditRequest, UserResponse, UserSearchResponse, UserSearchItem
@@ -12,9 +12,10 @@ router = APIRouter(prefix="/user", tags=["user"])
 
 @router.get("/profile", response_model=UserResponse)
 def get_own_profile(
-        user_id: str = Depends(get_user_id_from_jwt),
+        user_id: int = Depends(jwt_user_id),
         db: Session = Depends(get_db)
 ):
+    """displays the current user's information"""
     user = db.query(User).filter_by(id=user_id).first()
     if not user:
         raise HTTPException(404, detail="User not found")
@@ -24,8 +25,9 @@ def get_own_profile(
 def edit_profile(
         payload: UserEditRequest,
         db: Session = Depends(get_db),
-        user_id: int = Depends(get_user_id_from_jwt)
+        user_id: int = Depends(jwt_user_id)
 ):
+    """edit the current user's information"""
     user = db.query(User).filter_by(id=user_id).first()
     if not user:
         raise HTTPException(404, detail="User not found")
@@ -58,8 +60,9 @@ def edit_profile(
 async def upload_profile_picture(
         file: UploadFile = File(...),
         db: Session = Depends(get_db),
-        user_id: int = Depends(get_user_id_from_jwt)
+        user_id: int = Depends(jwt_user_id)
 ):
+    """Upload profile picture"""
     user = db.query(User).filter_by(id=user_id).first()
     if not user:
         raise HTTPException(404, detail="User not found")
@@ -79,6 +82,7 @@ async def upload_profile_picture(
 
 @router.get("/picture/{filename}")
 def get_profile_picture(filename: str):
+    """displays the image based on the filename"""
     abs_upload_folder = os.path.abspath(UPLOAD_FOLDER)
     path = os.path.abspath(os.path.join(UPLOAD_FOLDER, filename))
     if not path.startswith(abs_upload_folder + os.sep):
@@ -91,18 +95,22 @@ def get_profile_picture(filename: str):
 def get_profile_by_username(
         username: str,
         db: Session = Depends(get_db),
-        user_id: int = Depends(get_user_id_from_jwt)
+        user_id: int = Depends(jwt_user_id)
 ):
+    """displays a user's profile with their username as a parameter"""
     if not user_id:
-        raise HTTPException(400, detail="You must be logged in")
-
+        raise HTTPException(403, detail="You must be logged in")
     user = db.query(User).filter_by(username=username).first()
     if not user:
         raise HTTPException(404, detail="User not found")
     return user
 
 @router.get("/search/{username}", response_model=UserSearchResponse)
-def search_users(username: str, db: Session = Depends(get_db)):
+def search_users(
+        username: str,
+        db: Session = Depends(get_db)
+):
+    """displays a user's profile research with their username as a parameter"""
     users = db.query(User).filter(User.username.ilike(f"%{username}%")).all()
     if not users:
         raise HTTPException(404, detail="No user found")
@@ -110,7 +118,9 @@ def search_users(username: str, db: Session = Depends(get_db)):
     return {
         "message": "Users found",
         "users": [
-            UserSearchItem(username=u.username, profile_picture=u.profile_picture)
-            for u in users
+            UserSearchItem(
+                username=u.username,
+                profile_picture=u.profile_picture
+            ) for u in users
         ]
     }

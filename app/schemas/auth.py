@@ -19,7 +19,7 @@ class TokenRequest(BaseModel):
 
 class AuthResponse(BaseModel):
     token: str
-    user_id: str
+    user_id: int
     username: str
     profile_picture: Optional[str] = None
 

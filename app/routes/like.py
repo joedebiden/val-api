@@ -1,15 +1,20 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.core.database import get_db
-from app.core.utils import get_user_id_from_jwt
+from app.core.utils import jwt_user_id
 from app.models.models import Post, Like, User
 from app.schemas.like import LikeResponse, PostLikesResponse, LikedPost, LikeRemovedResponse
 
 router = APIRouter(prefix="/like", tags=["Likes"])
 
-"""Like a post"""
+
 @router.put("/{post_id}", response_model=LikeResponse)
-def like_post(post_id: str, db: Session = Depends(get_db), user_id: str = Depends(get_user_id_from_jwt)):
+def like_post(
+        post_id: int,
+        db: Session = Depends(get_db),
+        user_id: int = Depends(jwt_user_id)
+):
+    """Like a post"""
     post = db.query(Post).filter_by(id=post_id).first()
     if not post:
         raise HTTPException(status_code=404, detail="Post not found")
@@ -23,15 +28,20 @@ def like_post(post_id: str, db: Session = Depends(get_db), user_id: str = Depend
     db.refresh(new_like)
 
     return {
-        "like_id": str(new_like.id),
-        "post_id": str(post_id),
-        "user_id": str(user_id),
+        "like_id": new_like.id,
+        "post_id": post_id,
+        "user_id": user_id,
         "created_at": new_like.created_at
     }
 
-"""Unlike a post"""
+
 @router.delete("/{post_id}/unlike", response_model=LikeRemovedResponse)
-def unlike_post(post_id: str, db: Session = Depends(get_db), user_id: str = Depends(get_user_id_from_jwt)):
+def unlike_post(
+        post_id: int,
+        db: Session = Depends(get_db),
+        user_id: int = Depends(jwt_user_id)
+):
+    """Unlike a post"""
     post = db.query(Post).filter_by(id=post_id).first()
     if not post:
         raise HTTPException(status_code=404, detail="Post not found")
@@ -44,14 +54,18 @@ def unlike_post(post_id: str, db: Session = Depends(get_db), user_id: str = Depe
     db.commit()
 
     return {
-        "like_id_removed": str(like_to_dl.id),
-        "post_id_attached": str(post_id),
-        "user_id_from_like": str(user_id)
+        "like_id_removed": like_to_dl.id,
+        "post_id_attached": post_id,
+        "user_id_from_like": user_id
     }
 
-"""Fetch all the liked posts of an user"""
+
 @router.get("/liked-posts/{user_id}", response_model=list[LikedPost])
-def get_liked_posts_by_user(user_id: str, db: Session = Depends(get_db)):
+def get_liked_posts_by_user(
+        user_id: int,
+        db: Session = Depends(get_db)
+):
+    """Fetch all the liked posts of an user"""
     user = db.query(User).filter_by(id=user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -64,13 +78,17 @@ def get_liked_posts_by_user(user_id: str, db: Session = Depends(get_db)):
     )
 
     return [
-        {"post_id": str(post.id), "liked_at": created_at}
+        {"post_id": post.id, "liked_at": created_at}
         for post, created_at in liked_posts
     ]
 
-"""Fetch all the likes and users of a post"""
+
 @router.get("/get-likes/{post_id}", response_model=PostLikesResponse)
-def get_post_likes(post_id: str, db: Session = Depends(get_db)):
+def get_post_likes(
+        post_id: int,
+        db: Session = Depends(get_db)
+):
+    """Fetch all the likes and users of a post"""
     post = db.query(Post).filter_by(id=post_id).first()
     if not post:
         raise HTTPException(status_code=404, detail="Post not found")
@@ -85,11 +103,11 @@ def get_post_likes(post_id: str, db: Session = Depends(get_db)):
     )
 
     return {
-        "post_id": str(post_id),
+        "post_id": post_id,
         "likes_count": likes_count,
         "users": [
             {
-                "id": str(user.id),
+                "id": user.id,
                 "username": user.username,
                 "profile_picture": user.profile_picture
             } for user in users

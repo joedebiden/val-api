@@ -52,7 +52,7 @@ def delete_comment(
         raise HTTPException(status_code=404, detail="Comment not found")
     if not user_id:
         raise HTTPException(status_code=401, detail="Not authorized")
-    if str(comment.user_id) != user_id:
+    if comment.user_id != user_id:
         raise HTTPException(status_code=403, detail="Unauthorized to delete")
     db.delete(comment)
     db.commit()

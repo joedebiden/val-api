@@ -1,6 +1,6 @@
 from typing import Optional
 
-from fastapi import APIRouter, Depends, UploadFile, File, HTTPException
+from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, Form
 from sqlalchemy.orm import Session
 
 from app.core.utils import jwt_user_id, upload_picture_util
@@ -14,7 +14,7 @@ router = APIRouter(prefix="/post", tags=["post"])
 
 @router.post("/upload", response_model=PostResponse)
 async def upload_post(
-        caption: Optional[str],
+        caption: Optional[str] = Form(None),
         file: UploadFile = File(...),
         db: Session = Depends(get_db),
         user_id: int = Depends(jwt_user_id)

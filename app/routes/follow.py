@@ -33,10 +33,10 @@ def follow_user(
     db.refresh(new_follow)
 
     return {
-        "id": str(new_follow.id),
+        "id": new_follow.id,
         "follow_id": new_follow.follower_id,
         "followed_id": new_follow.followed_id,
-        "created_at": new_follow.created_at.isoformat()
+        "created_at": new_follow.created_at.now()
     }
 
 

@@ -30,7 +30,11 @@ def jwt_user_id(request: Request) -> int:
         raise HTTPException(status_code=401, detail="Not authorized")
     token = auth_header.split()[1]
     data = decode_jwt(token)
-    return data['id']
+    if data is None or 'id' not in data:
+        raise HTTPException(status_code=400, detail="Invalid or missing token")
+    if isinstance(data['id'], int):
+        return data['id']
+    raise HTTPException(status_code=400, detail="An error occurred with the token")
 
 
 def allowed_file(filename: str) -> bool:

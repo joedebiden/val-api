@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.utils import get_version
-from app.routes import auth, user, follow, post, like, comment
+from app.routes import auth, user, follow, post, like, comment, message
 from app.core.database import engine
 from app.models.models import Base
 
@@ -29,6 +29,7 @@ app.include_router(follow.router)
 app.include_router(post.router)
 app.include_router(like.router)
 app.include_router(comment.router)
+app.include_router(message.router)
 
 @app.get("/")
 def read_root():

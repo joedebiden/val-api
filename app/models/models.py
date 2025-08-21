@@ -96,4 +96,5 @@ class Message(Base):
     sender_id = Column(Integer, ForeignKey('utilisateur.id'), nullable=False)
     content = Column(Text, nullable=False)
     created_at = Column(DateTime, default=utc_now)
+    updated_at = Column(DateTime, default=utc_now)
     is_read = Column(Boolean, default=False)

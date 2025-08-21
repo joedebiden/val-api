@@ -1,10 +1,12 @@
+from typing import List
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.utils import jwt_user_id
 from app.models.models import Conversation, User, Message
-from app.schemas.message import MessageSent, MessageOut, MessageUpdate, ConversationOut
+from app.schemas.message import MessageSent, MessageOut, MessageUpdate, ConversationOut, ConversationDTO
 
 router = APIRouter(prefix="/message", tags=["messages"])
 
@@ -105,9 +107,21 @@ def get_conversation_content(
         detail="success",
     )
 
-@router.get("/conversations")
-def get_user_conversations():
+@router.get("/conversations", response_model=List[ConversationDTO])
+def get_user_conversations(
+        db: Session = Depends(get_db),
+        current_user: int = Depends(jwt_user_id)
+):
     """display all the conversations of the current user"""
+    conversations = db.query(Conversation).filter(
+        (Conversation.user1_id == current_user) | (Conversation.user2_id == current_user)
+    ).all()
+    if not conversations:
+        return []
+
+    return conversations
+
+
 
 
 @router.delete("/{conversation_id}")

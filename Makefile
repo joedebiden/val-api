@@ -75,7 +75,7 @@ python-alembic-first-migration:
 	alembic upgrade head
 
 python-alembic-second-migration:
-	alembic revision -m "Add a column"
+	alembic revision --autogenerate -m "Add a column"
 
 python-alembic-downgrading:
 	alembic downgrade base

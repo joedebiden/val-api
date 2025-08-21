@@ -14,6 +14,7 @@ class MessageDTO(BaseModel):
     sender_id: int
     content: str
     created_at: datetime
+    updated_at: datetime
     is_read: bool
 
     class Config:

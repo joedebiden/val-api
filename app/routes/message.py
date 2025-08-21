@@ -1,3 +1,4 @@
+import datetime
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -6,7 +7,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.utils import jwt_user_id
 from app.models.models import Conversation, User, Message
-from app.schemas.message import MessageSent, MessageOut, MessageUpdate, ConversationOut, ConversationDTO
+from app.schemas.message import MessageSent, MessageOut, MessageUpdate, ConversationOut, ConversationDTO, MessageDTO
 
 router = APIRouter(prefix="/message", tags=["messages"])
 
@@ -39,7 +40,10 @@ def send_message(
     db.commit()
     db.refresh(new_message)
 
-    return MessageOut(detail="success",message=new_message)
+    return MessageOut(
+        detail="success",
+        message=MessageDTO.model_validate(new_message, from_attributes=True) # avoid warning from IDE & prevent error from SQLAlchemy orm
+    )
 
 
 
@@ -77,10 +81,14 @@ def update_message(
         raise HTTPException(status_code=403, detail="Not allowed")
 
     message.content = payload.content
+    message.updated_at = datetime.datetime.now(datetime.timezone.utc)
     db.commit()
     db.refresh(message)
 
-    return MessageOut(detail="success",message=message)
+    return MessageOut(
+        detail="success",
+        message=MessageDTO.model_validate(message, from_attributes=True) # same comment as l:44
+    )
 
 @router.get("/conversation/{conversation_id}/content", response_model=ConversationOut)
 def get_conversation_content(

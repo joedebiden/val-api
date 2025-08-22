@@ -35,7 +35,7 @@ class ConversationDTO(BaseModel):
 
 class ConversationOut(BaseModel):
     conversation: ConversationDTO
-    messages: list[MessageOut]
+    messages: list[MessageDTO]
     detail: str
 
     class Config:

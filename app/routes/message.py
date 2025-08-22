@@ -1,15 +1,17 @@
+import asyncio
 import datetime
 from typing import List
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, WebSocket
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.core.utils import jwt_user_id
+from app.core.utils import jwt_user_id, ConnectionManager
 from app.models.models import Conversation, User, Message
 from app.schemas.message import MessageSent, MessageOut, MessageUpdate, ConversationOut, ConversationDTO, MessageDTO
 
 router = APIRouter(prefix="/message", tags=["messages"])
+manager = ConnectionManager()
 
 @router.post("/send/{username}", response_model=MessageOut)
 def send_message(
@@ -39,6 +41,22 @@ def send_message(
     db.add(new_message)
     db.commit()
     db.refresh(new_message)
+
+    # send notification to the other user if connected
+    asyncio.create_task(manager.send_personal_message(
+        {
+            "event": "new_message",
+            "conversation_id": conversation.id,
+            "message": {
+                "id": new_message.id,
+                "sender_id": new_message.sender_id,
+                "content": new_message.content,
+                "created_at": new_message.created_at.isoformat(),
+                "is_read": new_message.is_read
+            }
+        },
+        other_user.id
+    ))
 
     return MessageOut(
         detail="success",
@@ -108,10 +126,11 @@ def get_conversation_content(
         if msg.sender_id != current_user and not msg.is_read:
             msg.is_read = True
     db.commit()
+    db.refresh(conversation)
 
     return ConversationOut(
-        conversation=conversation,
-        messages=conversation.messages,
+        conversation=ConversationDTO.model_validate(conversation, from_attributes=True),
+        messages=[MessageDTO.model_validate(m, from_attributes=True) for m in conversation.messages],
         detail="success",
     )
 
@@ -130,9 +149,23 @@ def get_user_conversations(
     return conversations
 
 
-
-
+""" Maybe a good features ?
 @router.delete("/{conversation_id}")
 def delete_conversation(conversation_id):
-    """delete conversation"""
-    pass
+    # delete conversation and all this message
+"""
+
+@router.websocket("/ws/{user_id}")
+async def websocket_endpoint_chat(
+        user_id: int,
+        websocket: WebSocket
+):
+    """websocket endpoint for chat"""
+    await manager.connect(websocket, user_id)
+    try:
+        while True:
+            data = await websocket.receive_text()
+            await manager.send_personal_message({"message: ": data}, user_id)
+    except Exception as e:
+        manager.disconnect(websocket, user_id)
+        print(f"WebSocket disconnected for user {user_id}: {e}")

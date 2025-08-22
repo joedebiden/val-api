@@ -1,9 +1,12 @@
+from typing import Dict
+
 import jwt
 from fastapi import UploadFile, Request, HTTPException
 from PIL import Image
 import os
 from datetime import datetime
 from uuid import uuid4
+from fastapi import WebSocket
 
 from app.core.config import settings
 
@@ -72,3 +75,31 @@ def get_version():
             return f.read().strip()
     except FileNotFoundError:
         return "unknown"
+
+
+class ConnectionManager:
+    """Generic class to manages websocket connections"""
+    def __init__(self):
+        self.active_connections: Dict[int,list[WebSocket]] = {}
+
+    async def connect(self, websocket: WebSocket, user_id: int):
+        await websocket.accept()
+        if user_id not in self.active_connections:
+            self.active_connections[user_id] = []
+        self.active_connections[user_id].append(websocket)
+
+    def disconnect(self, websocket: WebSocket, user_id: int):
+        if user_id in self.active_connections:
+            self.active_connections[user_id].remove(websocket)
+            if not self.active_connections[user_id]:
+                del self.active_connections[user_id]
+
+    async def send_personal_message(self, message: dict, user_id: int):
+        if user_id in self.active_connections[user_id]:
+            for connection in self.active_connections[user_id]:
+                await connection.send_json(message)
+
+    async def broadcast(self, message: dict):
+        for connections in self.active_connections.values():
+            for connection in connections:
+                await connection.send_json(message)

@@ -1,14 +1,16 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from app.core.database import get_db
 from app.core.utils import jwt_user_id
 from app.models.models import Post, Like, User
-from app.schemas.like import LikeResponse, PostLikesResponse, LikedPost, LikeRemovedResponse
+from app.schemas.like import LikeDTO, PostLikesResponse, LikedPostsByUser
+from app.schemas.post import PostLightDTO
+from app.schemas.user import UserLightDTO
 
 router = APIRouter(prefix="/like", tags=["Likes"])
 
 
-@router.put("/{post_id}", response_model=LikeResponse)
+@router.post("/{post_id}", response_model=LikeDTO)
 def like_post(
         post_id: int,
         db: Session = Depends(get_db),
@@ -27,15 +29,15 @@ def like_post(
     db.commit()
     db.refresh(new_like)
 
-    return {
-        "like_id": new_like.id,
-        "post_id": post_id,
-        "user_id": user_id,
-        "created_at": new_like.created_at
-    }
+    return LikeDTO(
+        id=new_like.id,
+        post_id=new_like.post_id,
+        user_id=new_like.user_id,
+        created_at=new_like.created_at
+    )
 
 
-@router.delete("/{post_id}/unlike", response_model=LikeRemovedResponse)
+@router.delete("/{post_id}", response_model=LikeDTO)
 def unlike_post(
         post_id: int,
         db: Session = Depends(get_db),
@@ -53,14 +55,15 @@ def unlike_post(
     db.delete(like_to_dl)
     db.commit()
 
-    return {
-        "like_id_removed": like_to_dl.id,
-        "post_id_attached": post_id,
-        "user_id_from_like": user_id
-    }
+    return LikeDTO(
+            id=like_to_dl.id,
+            post_id=like_to_dl.post_id,
+            user_id=like_to_dl.user_id,
+            created_at=like_to_dl.created_at
+        )
 
 
-@router.get("/liked-posts/{user_id}", response_model=list[LikedPost])
+@router.get("/liked-posts/{user_id}", response_model=LikedPostsByUser)
 def get_liked_posts_by_user(
         user_id: int,
         db: Session = Depends(get_db)
@@ -71,16 +74,23 @@ def get_liked_posts_by_user(
         raise HTTPException(status_code=404, detail="User not found")
 
     liked_posts = (
-        db.query(Post, Like.created_at)
+        db.query(Post)
         .join(Like, Post.id == Like.post_id)
         .filter(Like.user_id == user_id)
+        .options(joinedload(Post.author)) # alternative to lazy='joined'
         .all()
     )
 
-    return [
-        {"post_id": post.id, "liked_at": created_at}
-        for post, created_at in liked_posts
-    ]
+    return LikedPostsByUser(
+        user_id=user_id,
+        liked_posts=[PostLightDTO(
+            id=p.id, image_url=p.image_url,
+            caption=p.caption, user_id=p.user_id,
+            username=p.author.username, user_profile=p.author.profile_picture,
+            created_at=p.created_at, hidden_tag=p.hidden_tag
+        ) for p in liked_posts],
+        count=len(liked_posts)
+    )
 
 
 @router.get("/get-likes/{post_id}", response_model=PostLikesResponse)
@@ -101,15 +111,15 @@ def get_post_likes(
         .filter(Like.post_id == post_id)
         .all()
     )
-
-    return {
-        "post_id": post_id,
-        "likes_count": likes_count,
-        "users": [
-            {
-                "id": user.id,
-                "username": user.username,
-                "profile_picture": user.profile_picture
-            } for user in users
+    return PostLikesResponse(
+        post_id=post_id,
+        likes_count=likes_count,
+        users=[
+            UserLightDTO(
+                id=user.id,
+                username=user.username,
+                profile_picture=user.profile_picture
+            ) for user in users
         ]
-    }
+    )
+

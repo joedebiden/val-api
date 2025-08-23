@@ -3,7 +3,7 @@ from typing import List
 
 from pydantic import BaseModel
 
-class CommentResponse(BaseModel):
+class CommentDTO(BaseModel):
     id: int
     content: str
     created_at: datetime
@@ -11,8 +11,8 @@ class CommentResponse(BaseModel):
     post_id: int
 
 class CommentContent(BaseModel):
-    content: str
+    content: str # mandatory for the payload
 
 class ListCommentContent(BaseModel):
-    content: List[CommentResponse]
+    contents: List[CommentDTO]
     count: int

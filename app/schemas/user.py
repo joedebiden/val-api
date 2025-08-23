@@ -30,3 +30,11 @@ class UserSearchItem(BaseModel):
 class UserSearchResponse(BaseModel):
     message: str
     users: List[UserSearchItem]
+
+class UserLightDTO(BaseModel):
+    id: int
+    username: str
+    profile_picture: Optional[str]
+
+    class ConfigDict:
+        from_attributes = True

@@ -6,13 +6,13 @@ from sqlalchemy.orm import Session
 from app.core.utils import jwt_user_id, upload_picture_util
 from app.models.models import Post, User, Follow, Like, Comment
 from app.core.database import get_db
-from app.schemas.post import PostResponse, PostDetailResponse, FeedResponse, EditPayload, FeedDetailResponse
+from app.schemas.post import PostDTO, PostDetailResponse, FeedResponse, EditPayload, FeedDetailResponse
 from sqlalchemy import func
 
 router = APIRouter(prefix="/post", tags=["post"])
 
 
-@router.post("/upload", response_model=PostResponse)
+@router.post("/upload", response_model=PostDTO)
 async def upload_post(
         caption: Optional[str] = Form(None),
         file: UploadFile = File(...),
@@ -29,7 +29,7 @@ async def upload_post(
     db.refresh(new_post)
 
     user = db.get(User, user_id)
-    return PostResponse(
+    return PostDTO(
         id=new_post.id, image_url=new_post.image_url,
         caption=new_post.caption, user_id=user_id,
         username=user.username, user_profile=user.profile_picture,
@@ -52,7 +52,7 @@ def global_feed(
     content = []
     for p in posts:
         u = db.get(User, p.user_id)
-        content.append(PostResponse(
+        content.append(PostDTO(
             id=p.id, image_url=p.image_url,
             caption=p.caption, user_id=p.user_id,
             username=u.username, user_profile=u.profile_picture,
@@ -78,7 +78,7 @@ def delete_post(
     db.commit()
     return {"message": "Post deleted successfully"}
 
-@router.post("/edit/{post_id}", response_model=PostResponse)
+@router.post("/edit/{post_id}", response_model=PostDTO)
 def edit_post(
         post_id: int,
         payload: EditPayload,
@@ -102,7 +102,7 @@ def edit_post(
     db.commit()
     db.refresh(p)
     user = db.get(User, p.user_id)
-    return PostResponse(
+    return PostDTO(
         id=p.id, image_url=p.image_url,
         caption=p.caption, user_id=p.user_id,
         username=user.username, user_profile=user.profile_picture,
@@ -123,7 +123,7 @@ def personal_feed(
     content = []
     for p in posts:
         u = db.get(User, p.user_id)
-        content.append(PostResponse(
+        content.append(PostDTO(
             id=p.id, image_url=p.image_url,
             caption=p.caption, user_id=p.user_id,
             username=u.username, user_profile=u.profile_picture,
@@ -156,7 +156,7 @@ def user_feed(
         comments_count = db.query(func.count(Comment.id)).filter(Comment.post_id == p.id).scalar()
 
         content.append(PostDetailResponse(
-            post=PostResponse(
+            post=PostDTO(
                 id=p.id, image_url=p.image_url,
                 caption=p.caption, user_id=p.user_id,
                 username=u.username, user_profile=u.profile_picture,
@@ -192,7 +192,7 @@ def show_post(
 
     return PostDetailResponse(
         message="Post found",
-        post=PostResponse(
+        post=PostDTO(
             id=post.id, image_url=post.image_url,
             caption=post.caption, user_id=post.user_id,
             username=user.username, user_profile=user.profile_picture,

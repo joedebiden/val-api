@@ -2,7 +2,7 @@ from pydantic import BaseModel
 from typing import Optional, List
 from datetime import datetime
 
-class PostResponse(BaseModel):
+class PostDTO(BaseModel):
     id: int
     image_url: str
     caption: Optional[str]
@@ -17,13 +17,13 @@ class PostResponse(BaseModel):
 
 class PostDetailResponse(BaseModel):
     message: Optional[str] = None
-    post: PostResponse
+    post: PostDTO
     likes: dict
     comments: dict
 
 class FeedResponse(BaseModel):
     message: str
-    content: List[PostResponse]
+    content: List[PostDTO]
 
 class EditPayload(BaseModel):
     caption: str
@@ -32,3 +32,15 @@ class EditPayload(BaseModel):
 class FeedDetailResponse(BaseModel):
     message: str
     content: List[PostDetailResponse]
+
+class PostLightDTO(BaseModel):
+    id: int
+    image_url: str
+    caption: Optional[str]
+    user_id: int
+    username: str
+    user_profile: Optional[str]
+    created_at: datetime
+
+    class ConfigDict:
+        from_attributes = True

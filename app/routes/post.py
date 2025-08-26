@@ -6,6 +6,8 @@ from sqlalchemy.orm import Session
 from app.core.utils import jwt_user_id, upload_picture_util
 from app.models.models import Post, User, Follow, Like, Comment
 from app.core.database import get_db
+from app.schemas.comment import CommentDTO
+from app.schemas.like import LikeDTO
 from app.schemas.post import PostDTO, PostDetailResponse, FeedResponse, EditPayload, FeedDetailResponse
 from sqlalchemy import func
 
@@ -152,9 +154,6 @@ def user_feed(
     for p in posts:
         u = db.get(User, p.user_id)
 
-        likes_count = db.query(func.count(Like.id)).filter(Like.post_id == p.id).scalar()
-        comments_count = db.query(func.count(Comment.id)).filter(Comment.post_id == p.id).scalar()
-
         content.append(PostDetailResponse(
             post=PostDTO(
                 id=p.id, image_url=p.image_url,
@@ -162,8 +161,20 @@ def user_feed(
                 username=u.username, user_profile=u.profile_picture,
                 created_at=p.created_at, hidden_tag=p.hidden_tag,
             ),
-            likes={"count": likes_count},
-            comments={"count": comments_count},
+            likes=[LikeDTO(
+                id=l.id,
+                post_id=l.post_id,
+                user_id=l.user_id,
+                created_at=l.created_at
+            ) for l in db.query(Like).filter_by(post_id=p.id) ],
+            comments=[CommentDTO(
+                id=c.id,
+                post_id=c.post_id,
+                user_id=c.user_id,
+                content=c.content,
+                created_at=c.created_at
+            ) for c in db.query(Comment).filter_by(post_id=p.id
+            )],
         ))
     return FeedDetailResponse(
         message="Posts found",
@@ -185,10 +196,6 @@ def show_post(
     if not post:
         raise HTTPException(404, "Post not found")
     user = db.get(User, post.user_id)
-    likes_count = db.query(func.count(Like.id)).filter(Like.post_id == post_id).scalar()
-    comments_count = db.query(func.count(Comment.id)).filter(Comment.post_id == post_id).scalar()
-    likes_list = [{'like_id': l.id} for l in db.query(Like).filter_by(post_id=post_id)]
-    comment_list = [{'comment_id': c.id} for c in db.query(Comment).filter_by(post_id=post_id)]
 
     return PostDetailResponse(
         message="Post found",
@@ -198,12 +205,17 @@ def show_post(
             username=user.username, user_profile=user.profile_picture,
             created_at=post.created_at, hidden_tag=post.hidden_tag,
         ),
-        likes={
-            'likes_count': likes_count,
-            'likes_list': likes_list
-        },
-        comments={
-            'comments_count': comments_count,
-            'comments': comment_list
-        }
+        likes=[LikeDTO(
+            id=l.id,
+            post_id=l.post_id,
+            user_id=l.user_id,
+            created_at=l.created_at
+        ) for l in db.query(Like).filter_by(post_id=post_id)],
+        comments=[CommentDTO(
+            id=c.id,
+            post_id=c.post_id,
+            user_id=c.user_id,
+            content=c.content,
+            created_at=c.created_at
+        ) for c in db.query(Comment).filter_by(post_id=post_id)]
     )

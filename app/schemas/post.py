@@ -16,10 +16,21 @@ class PostDTO(BaseModel):
         from_attributes = True
 
 class PostDetailResponse(BaseModel):
-    message: Optional[str] = None
-    post: PostDTO
-    likes: dict
-    comments: dict
+    post: 'PostDTO'
+    likes: list
+    comments: list
+    # avoid circular import issues
+    # likes: List['LikeDTO']
+    # comments: List['CommentDTO']
+    @classmethod
+    def create(cls, post, likes, comments):
+        from app.schemas.like import LikeDTO
+        from app.schemas.comment import CommentDTO
+        return cls(
+            post=post,
+            likes=[LikeDTO.model_validate(l) for l in likes],
+            comments=[CommentDTO.model_validate(c) for c in comments]
+        )
 
 class FeedResponse(BaseModel):
     message: str

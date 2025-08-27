@@ -3,12 +3,15 @@ from typing import List
 
 from pydantic import BaseModel
 
+from app.schemas.user import UserLightDTO
+
+
 class CommentDTO(BaseModel):
     id: int
     content: str
     created_at: datetime
-    user_id: int
     post_id: int
+    user: UserLightDTO
 
 class CommentContent(BaseModel):
     content: str # mandatory for the payload

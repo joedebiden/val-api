@@ -11,6 +11,8 @@ from app.schemas.like import LikeDTO
 from app.schemas.post import PostDTO, PostDetailResponse, FeedResponse, EditPayload, FeedDetailResponse
 from sqlalchemy import func
 
+from app.schemas.user import UserLightDTO
+
 router = APIRouter(prefix="/post", tags=["post"])
 
 
@@ -170,7 +172,11 @@ def user_feed(
             comments=[CommentDTO(
                 id=c.id,
                 post_id=c.post_id,
-                user_id=c.user_id,
+                user=UserLightDTO(
+                    id=c.user_id,
+                    username=db.get(User, c.user_id).username,
+                    profile_picture=db.get(User, c.user_id).profile_picture
+                ),
                 content=c.content,
                 created_at=c.created_at
             ) for c in db.query(Comment).filter_by(post_id=p.id
@@ -214,7 +220,11 @@ def show_post(
         comments=[CommentDTO(
             id=c.id,
             post_id=c.post_id,
-            user_id=c.user_id,
+            user=UserLightDTO(
+                id=c.user_id,
+                username=db.get(User, c.user_id).username,
+                profile_picture=db.get(User, c.user_id).profile_picture
+            ),
             content=c.content,
             created_at=c.created_at
         ) for c in db.query(Comment).filter_by(post_id=post_id)]

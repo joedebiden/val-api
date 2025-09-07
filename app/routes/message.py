@@ -3,12 +3,13 @@ import datetime
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, WebSocket
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.core.database import get_db
 from app.core.utils import jwt_user_id, ConnectionManager
 from app.models.models import Conversation, User, Message
 from app.schemas.message import MessageSent, MessageOut, MessageUpdate, ConversationOut, ConversationDTO, MessageDTO
+from app.schemas.user import UserLightDTO
 
 router = APIRouter(prefix="/message", tags=["messages"])
 manager = ConnectionManager()
@@ -140,13 +141,40 @@ def get_user_conversations(
         current_user: int = Depends(jwt_user_id)
 ):
     """display all the conversations of the current user"""
-    conversations = db.query(Conversation).filter(
-        (Conversation.user1_id == current_user) | (Conversation.user2_id == current_user)
-    ).all()
+    conversations = (
+        db.query(Conversation)
+            .options(
+                joinedload(Conversation.user1),
+                joinedload(Conversation.user2)
+            )
+            .filter(
+                (Conversation.user1_id == current_user) |
+                (Conversation.user2_id == current_user)
+        ).all()
+    )
+
     if not conversations:
         return []
 
-    return conversations
+    conversations_dto = []
+    for conv in conversations:
+        conversations_dto.append(
+            ConversationDTO(
+                id=conv.id,
+                user1=UserLightDTO(
+                    id=conv.user1.id,
+                    username=conv.user1.username,
+                    profile_picture=conv.user1.profile_picture,
+                ),
+                user2=UserLightDTO(
+                    id=conv.user2.id,
+                    username=conv.user2.username,
+                    profile_picture=conv.user2.profile_picture,
+                ),
+                created_at=conv.created_at,
+            )
+        )
+    return conversations_dto
 
 
 """ Maybe a good features ?

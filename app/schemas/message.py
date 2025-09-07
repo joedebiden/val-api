@@ -1,6 +1,8 @@
 from pydantic import BaseModel
 from datetime import datetime
 
+from app.schemas.user import UserLightDTO
+
 
 class MessageSent(BaseModel):
     content: str
@@ -29,8 +31,8 @@ class MessageOut(BaseModel):
 
 class ConversationDTO(BaseModel):
     id: int
-    user1_id: int
-    user2_id: int
+    user1: UserLightDTO
+    user2: UserLightDTO
     created_at: datetime
 
 class ConversationOut(BaseModel):

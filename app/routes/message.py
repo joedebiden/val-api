@@ -15,7 +15,7 @@ router = APIRouter(prefix="/message", tags=["messages"])
 manager = ConnectionManager()
 
 @router.post("/send/{username}", response_model=MessageOut)
-def send_message(
+async def send_message(
         payload: MessageSent,
         username: str,
         db: Session = Depends(get_db),
@@ -23,6 +23,8 @@ def send_message(
 ):
     """send message to user and check if conv exist else create a new conversation"""
     other_user = db.query(User).filter_by(username=username).first()
+    if other_user.id == current_user:
+        raise HTTPException(status_code=400, detail="You cannot talk to yourself")
 
     conversation = db.query(Conversation).filter(
         ((Conversation.user1_id == current_user) & (Conversation.user2_id == other_user.id)) |
@@ -43,21 +45,22 @@ def send_message(
     db.commit()
     db.refresh(new_message)
 
-    # send notification to the other user if connected
-    asyncio.create_task(manager.send_personal_message(
-        {
-            "event": "new_message",
-            "conversation_id": conversation.id,
-            "message": {
-                "id": new_message.id,
-                "sender_id": new_message.sender_id,
-                "content": new_message.content,
-                "created_at": new_message.created_at.isoformat(),
-                "is_read": new_message.is_read
-            }
-        },
-        other_user.id
-    ))
+    if other_user.id in manager.active_connections:
+        # send notification to the other user if connected
+        asyncio.create_task(manager.send_personal_message(
+            {
+                "event": "new_message",
+                "conversation_id": conversation.id,
+                "message": {
+                    "id": new_message.id,
+                    "sender_id": new_message.sender_id,
+                    "content": new_message.content,
+                    "created_at": new_message.created_at.isoformat(),
+                    "is_read": new_message.is_read
+                }
+            },
+            other_user.id
+        ))
 
     return MessageOut(
         detail="success",

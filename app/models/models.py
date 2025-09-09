@@ -101,3 +101,5 @@ class Message(Base):
     created_at = Column(DateTime, default=utc_now)
     updated_at = Column(DateTime, default=utc_now)
     is_read = Column(Boolean, default=False)
+
+    sender = relationship('User', foreign_keys=[sender_id])

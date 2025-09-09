@@ -127,15 +127,32 @@ def get_conversation_content(
 
     # display read message
     for msg in conversation.messages:
-        if msg.sender_id != current_user and not msg.is_read:
+        if msg.sender != current_user and not msg.is_read:
             msg.is_read = True
     db.commit()
     db.refresh(conversation)
 
+    message_sorted = sorted(conversation.messages, key=lambda m: m.created_at, reverse=False)
+
     return ConversationOut(
         conversation=ConversationDTO.model_validate(conversation, from_attributes=True),
-        messages=[MessageDTO.model_validate(m, from_attributes=True) for m in conversation.messages],
-        detail="success",
+        messages=[
+            MessageDTO(
+                id=m.id,
+                conversation_id=m.conversation_id,
+                sender=UserLightDTO(
+                    id=m.sender.id,
+                    username=m.sender.username,
+                    profile_picture=m.sender.profile_picture
+                ),
+                content=m.content,
+                created_at=m.created_at,
+                updated_at=m.updated_at,
+                is_read=m.is_read
+            )
+            for m in message_sorted
+        ],
+        detail="success"
     )
 
 @router.get("/conversations", response_model=List[ConversationDTO])

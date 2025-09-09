@@ -13,7 +13,7 @@ class MessageUpdate(BaseModel):
 class MessageDTO(BaseModel):
     id: int
     conversation_id: int
-    sender_id: int
+    sender: UserLightDTO
     content: str
     created_at: datetime
     updated_at: datetime

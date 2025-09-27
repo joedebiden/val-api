@@ -1,11 +1,10 @@
 import datetime
-from typing import List, Dict, Set
+from typing import List
 
-from fastapi import APIRouter, Depends, HTTPException, WebSocketException
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session, joinedload
-from starlette import status
-from starlette.websockets import WebSocket, WebSocketDisconnect
 
+from app.core.config import fast_mqtt
 from app.core.database import get_db
 from app.core.utils import jwt_user_id
 from app.models.models import Conversation, User, Message
@@ -13,11 +12,6 @@ from app.schemas.message import MessageSent, MessageOut, MessageUpdate, Conversa
 from app.schemas.user import UserLightDTO
 
 router = APIRouter(prefix="/message", tags=["messages"])
-
-active_dm_sessions: Dict[int, Dict[int, WebSocket]] = {}
-
-
-
 
 @router.post("/send/{user_id}", response_model=MessageDTO)
 async def send_message(
@@ -49,6 +43,9 @@ async def send_message(
     db.add(new_message)
     db.commit()
     db.refresh(new_message)
+
+    topic = f"chat/{conversation.id}/messages"
+    fast_mqtt.publish(topic, new_message.content)
 
     return MessageDTO(
         id=new_message.id,

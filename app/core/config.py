@@ -2,6 +2,7 @@ from typing import Optional
 
 from pydantic_settings import BaseSettings
 from pydantic import Field
+from fastapi_mqtt import MQTTConfig, FastMQTT
 
 class Settings(BaseSettings):
     DATABASE_URL: str = Field(..., alias="DATABASE_URL")
@@ -17,3 +18,6 @@ class Settings(BaseSettings):
         populate_by_name = True
 
 settings = Settings()
+
+# mqtt broker config
+fast_mqtt = FastMQTT(config=MQTTConfig())

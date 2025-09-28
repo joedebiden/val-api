@@ -38,7 +38,6 @@ class ConversationDTO(BaseModel):
 class ConversationOut(BaseModel):
     conversation: ConversationDTO
     messages: list[MessageDTO]
-    detail: str
 
     class Config:
         orm_mode = True

@@ -146,8 +146,7 @@ def get_conversation_content(
                 is_read=m.is_read
             )
             for m in message_sorted
-        ],
-        detail="success"
+        ]
     )
 
 @router.get("/conversations", response_model=List[ConversationDTO])

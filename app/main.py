@@ -39,7 +39,7 @@ def connect(client, flags, rc, properties):
     client.subscribe("chat/+/messages")
 
 @fast_mqtt.on_message()
-def messages(client, topic, payload, qos, properties):
+async def messages(client, topic, payload, qos, properties):
     print(f"Message reçu: {payload} sur {topic}")
 
 @app.post("/ssage/send-me")

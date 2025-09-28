@@ -41,3 +41,5 @@ htmlcov/
 # Docker
 .docker
 
+# Mqtt
+mqtt/passwordfile

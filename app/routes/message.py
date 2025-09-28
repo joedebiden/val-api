@@ -2,6 +2,7 @@ import datetime
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.encoders import jsonable_encoder
 from sqlalchemy.orm import Session, joinedload
 
 from app.core.config import fast_mqtt
@@ -45,7 +46,7 @@ async def send_message(
     db.refresh(new_message)
 
     topic = f"chat/{conversation.id}/messages"
-    fast_mqtt.publish(topic, new_message.content)
+    fast_mqtt.publish(topic, jsonable_encoder(new_message))
 
     return MessageDTO(
         id=new_message.id,

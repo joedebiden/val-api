@@ -45,10 +45,7 @@ async def send_message(
     db.commit()
     db.refresh(new_message)
 
-    topic = f"chat/{conversation.id}/messages"
-    fast_mqtt.publish(topic, jsonable_encoder(new_message))
-
-    return MessageDTO(
+    message_dto = MessageDTO(
         id=new_message.id,
         conversation_id=new_message.conversation_id,
         sender=UserLightDTO(
@@ -61,6 +58,11 @@ async def send_message(
         updated_at=new_message.updated_at,
         is_read=new_message.is_read
     )
+
+    topic = f"chat/{conversation.id}/messages"
+    fast_mqtt.publish(topic, jsonable_encoder(message_dto))
+
+    return message_dto
 
 
 

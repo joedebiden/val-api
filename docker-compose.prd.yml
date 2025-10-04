@@ -46,6 +46,23 @@ services:
       - frontend
       - backend
 
+  mqtt:
+    image: eclipse-mosquitto
+    container_name: mqtt
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - ./mqtt/mosquitto.conf:/mosquitto/config/mosquitto.conf
+      - ./mqtt/entrypoint.sh:/mosquitto/entrypoint.sh
+      - ./mqtt/data:/mosquitto/data
+      - ./mqtt/log:/mosquitto/log
+      - ./mqtt/config:/mosquitto/config
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    entrypoint: [ "/mosquitto/entrypoint.sh" ]
+
 volumes:
   postgres_data:
   uploads_data:

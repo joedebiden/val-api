@@ -84,6 +84,9 @@ class Conversation(Base):
     user2_id = Column(Integer, ForeignKey('utilisateur.id'), nullable=False)
     created_at = Column(DateTime, default=utc_now)
 
+    user1 = relationship('User', foreign_keys=[user1_id])
+    user2 = relationship('User', foreign_keys=[user2_id])
+
     messages = relationship('Message', backref='conversation', lazy='joined')
 
     __table_args__ = (UniqueConstraint('user1_id', 'user2_id', name='unique_conversation'),)
@@ -98,3 +101,5 @@ class Message(Base):
     created_at = Column(DateTime, default=utc_now)
     updated_at = Column(DateTime, default=utc_now)
     is_read = Column(Boolean, default=False)
+
+    sender = relationship('User', foreign_keys=[sender_id])

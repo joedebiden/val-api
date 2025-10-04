@@ -1,6 +1,7 @@
 services:
   val-db-dev:
     container_name: val-db-dev
+    restart: unless-stopped
     image: postgres:16.8-alpine
     volumes:
       - ./.docker/postgres-localhost/data:/var/lib/postgresql/data
@@ -16,3 +17,20 @@ services:
       timeout: 10s
       retries: 5
       start_period: 10s
+
+  mqtt:
+    image: eclipse-mosquitto
+    container_name: mqtt
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - ./mqtt/mosquitto.conf:/mosquitto/config/mosquitto.conf
+      - ./mqtt/entrypoint.sh:/mosquitto/entrypoint.sh
+      - ./mqtt/data:/mosquitto/data
+      - ./mqtt/log:/mosquitto/log
+      - ./mqtt/config:/mosquitto/config
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    entrypoint: ["/mosquitto/entrypoint.sh"]

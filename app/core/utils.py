@@ -10,7 +10,6 @@ from fastapi import WebSocket
 
 from app.core.config import settings
 
-
 UPLOAD_FOLDER = "public/uploads/"
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 
@@ -37,7 +36,7 @@ def jwt_user_id(request: Request) -> int:
         raise HTTPException(status_code=400, detail="Invalid or missing token")
     if isinstance(data['id'], int):
         return data['id']
-    raise HTTPException(status_code=400, detail="An error occurred with the token")
+    raise HTTPException(status_code=400, detail="An error occurred with the token, please login to refresh it")
 
 
 def allowed_file(filename: str) -> bool:

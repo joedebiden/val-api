@@ -14,3 +14,4 @@ pip install pytest
 pip install httpx
 pip install pydantic_settings
 pip install psycopg2
+pip install fastapi-mqtt

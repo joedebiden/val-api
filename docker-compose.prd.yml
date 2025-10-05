@@ -62,6 +62,9 @@ services:
       - "1883:1883"
       - "9001:9001"
     entrypoint: [ "/mosquitto/entrypoint.sh" ]
+    networks:
+      - backend
+      - frontend
 
 volumes:
   postgres_data:

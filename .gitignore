@@ -37,9 +37,10 @@ htmlcov/
 *.bak
 *.swp
 
-
 # Docker
 .docker
 
 # Mqtt
-mqtt/passwordfile
+mqtt/config/
+mqtt/data/
+mqtt/log/

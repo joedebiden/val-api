@@ -8,6 +8,17 @@ COPY ./version.txt /code/version.txt
 
 COPY ./public/uploads/default.jpg /code/public/uploads/default.jpg
 
+ARG MQTT_USER
+ARG MQTT_PASSWORD
+
+ENV MQTT_USER=${MQTT_USER} \
+    MQTT_PASSWORD=${MQTT_PASSWORD}
+
+COPY ./mqtt/entrypoint.sh /code/mqtt/entrypoint.sh
+COPY ./mqtt/mosquitto.conf /code/mqtt/mosquitto.conf
+
+RUN echo "${MQTT_USER}:${MQTT_PASSWORD}" > /code/mqtt/passwordfile
+
 RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
 
 COPY ./app /code/app

@@ -46,9 +46,9 @@ services:
       - frontend
       - backend
 
-  mqtt:
+  mqtt-prod:
     image: eclipse-mosquitto
-    container_name: mqtt
+    container_name: mqtt-prod
     restart: unless-stopped
     env_file:
       - .env
@@ -63,7 +63,6 @@ services:
       - "9001:9001"
     entrypoint: [ "/mosquitto/entrypoint.sh" ]
     networks:
-      - backend
       - frontend
 
 volumes:

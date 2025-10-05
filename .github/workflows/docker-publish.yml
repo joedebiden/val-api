@@ -54,7 +54,6 @@ jobs:
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          build-args: MQTT_USER=${{ secrets.MQTT_USER }} MQTT_PASSWORD=${{ secrets.MQTT_PASSWORD }}
 
 
   remote-ssh-build:

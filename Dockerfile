@@ -1,26 +1,17 @@
-FROM python:3.12-slim-bookworm
+    FROM python:3.12-slim-bookworm
 
-WORKDIR /code
+    WORKDIR /code
 
-COPY ./requirements.txt /code/requirements.txt
+    COPY ./requirements.txt /code/requirements.txt
 
-COPY ./version.txt /code/version.txt
+    RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
 
-COPY ./public/uploads/default.jpg /code/public/uploads/default.jpg
+    COPY ./version.txt /code/version.txt
 
-ARG MQTT_USER
-ARG MQTT_PASSWORD
+    COPY ./public/uploads/default.jpg /code/public/uploads/default.jpg
 
-ENV MQTT_USER=${MQTT_USER} \
-    MQTT_PASSWORD=${MQTT_PASSWORD}
+    COPY ./mqtt /code/mqtt
 
-COPY ./mqtt/entrypoint.sh /code/mqtt/entrypoint.sh
-COPY ./mqtt/mosquitto.conf /code/mqtt/mosquitto.conf
+    COPY ./app /code/app
 
-RUN echo "${MQTT_USER}:${MQTT_PASSWORD}" > /code/mqtt/passwordfile
-
-RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
-
-COPY ./app /code/app
-
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "5000", "--workers", "4"]
+    CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "5000", "--workers", "4"]

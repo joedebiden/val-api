@@ -23,7 +23,7 @@ else
   fi
 fi
 
-chmod 0640 "$PASSFILE"
+chmod 640 "$PASSFILE"
 chown mosquitto:mosquitto "$PASSFILE"
 
 exec mosquitto -c /mosquitto/config/mosquitto.conf

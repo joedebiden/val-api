@@ -30,6 +30,9 @@ services:
       DATABASE_URL: ${DATABASE_URL}
       DATABASE_URL_TEST: ${DATABASE_URL_TEST}
       SECRET_KEY: ${SECRET_KEY}
+      MQTT_HOST: ${MQTT_HOST}
+      MQTT_USER: ${MQTT_USER}
+      MQTT_PASSWORD: ${MQTT_PASSWORD}
     volumes:
       - uploads_data:/app/public/uploads
       - ./logs:/app/logs
@@ -50,8 +53,10 @@ services:
     image: eclipse-mosquitto
     container_name: mqtt-prod
     restart: unless-stopped
-    env_file:
-      - .env
+    environment:
+      MQTT_HOST: ${MQTT_HOST}
+      MQTT_USER: ${MQTT_USER}
+      MQTT_PASSWORD: ${MQTT_PASSWORD}
     volumes:
       - ./mqtt/mosquitto.conf:/mosquitto/config/mosquitto.conf
       - ./mqtt/entrypoint.sh:/mosquitto/entrypoint.sh

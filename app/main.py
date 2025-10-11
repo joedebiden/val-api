@@ -2,6 +2,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.responses import JSONResponse
 
 from app.core.config import fast_mqtt
 from app.core.utils import get_version
@@ -61,8 +62,14 @@ def read_root():
     return {"message": "Bienvenue sur Valenstagram"}
 
 @app.get("/health")
-def health_check():
-    return {"status": "ok"}
+async def health_check():
+    """Simple healthcheck utilisé par Docker Compose"""
+    try:
+        if not fast_mqtt.client.is_connected:
+            return JSONResponse(status_code=500, content={"status": "degraded", "error": "MQTT not connected"})
+        return {"status": "ok"}
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"status": "degraded", "error": str(e)})
 
 @app.get("/version")
 def version():

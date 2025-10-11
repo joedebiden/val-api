@@ -1,17 +1,19 @@
-    FROM python:3.12-slim-bookworm
+FROM python:3.12-slim-bookworm
 
-    WORKDIR /code
+WORKDIR /code
 
-    COPY ./requirements.txt /code/requirements.txt
+RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
 
-    RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
+COPY ./requirements.txt /code/requirements.txt
 
-    COPY ./version.txt /code/version.txt
+RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
 
-    COPY ./public/uploads/default.jpg /code/public/uploads/default.jpg
+COPY ./version.txt /code/version.txt
 
-    COPY ./mqtt /code/mqtt
+COPY ./public/uploads/default.jpg /code/public/uploads/default.jpg
 
-    COPY ./app /code/app
+COPY ./mqtt /code/mqtt
 
-    CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "5000", "--workers", "4"]
+COPY ./app /code/app
+
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "5000", "--workers", "4"]

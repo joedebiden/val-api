@@ -38,3 +38,6 @@ class UserLightDTO(BaseModel):
 
     class ConfigDict:
         from_attributes = True
+
+class SuggestionDTO(BaseModel):
+    user: List[UserLightDTO]

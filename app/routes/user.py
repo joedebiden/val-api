@@ -5,7 +5,8 @@ from sqlalchemy.orm import Session
 from app.core.utils import jwt_user_id, upload_picture_util, UPLOAD_FOLDER
 from app.models.models import User
 from app.core.database import get_db
-from app.schemas.user import UserEditRequest, UserResponse, UserSearchResponse, UserSearchItem
+from app.schemas.user import UserEditRequest, UserResponse, UserSearchResponse, UserSearchItem, SuggestionDTO, \
+    UserLightDTO
 import os
 
 router = APIRouter(prefix="/user", tags=["user"])
@@ -124,3 +125,16 @@ def search_users(
             ) for u in users
         ]
     }
+
+@router.get("/suggestions", response_model=SuggestionDTO)
+def suggestion_users(
+        db: Session = Depends(get_db)
+):
+    """only for test, to enhance later..."""
+    return SuggestionDTO(
+        user=[UserLightDTO(
+            id=1,
+            username="dev",
+            profile_picture="default.jpg"
+        )]
+    )
